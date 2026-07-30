@@ -119,6 +119,10 @@ Claim enter/leave messages go to your chat log via `ChatHud.addMessage`, which a
 
 ## Building
 
+> On a **fresh clone**, build [TrarnCore](../TrarnCore) once first — Loom reads the library jar at
+> configuration time, so it must exist before this mod can even be configured:
+> `(cd ../TrarnCore && ./gradlew build)`. After that, no ordering is needed.
+
 Requires Java 21 (tested with Eclipse Temurin 21).
 
 ```bash

@@ -67,6 +67,13 @@ jobs:
             ${{ runner.os }}-gradle-${{ steps.tag.outputs.dir }}-
             ${{ runner.os }}-gradle-
 
+      # See the note in ci.yml: Loom reads the library jar at configuration time, so it has to
+      # exist on disk before a mod build is even configured.
+      - name: Build TrarnCore first
+        if: steps.tag.outputs.dir != 'TrarnCore'
+        working-directory: TrarnCore
+        run: ./gradlew build --stacktrace
+
       - name: Build
         working-directory: ${{ steps.tag.outputs.dir }}
         run: ./gradlew build --stacktrace -P${{ steps.tag.outputs.prop }}=${{ steps.tag.outputs.version }}

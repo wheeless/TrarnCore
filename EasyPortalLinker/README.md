@@ -81,6 +81,10 @@ it is not the same thing as sending a chat message.
 
 ## Build
 
+> On a **fresh clone**, build [TrarnCore](../TrarnCore) once first — Loom reads the library jar at
+> configuration time, so it must exist before this mod can even be configured:
+> `(cd ../TrarnCore && ./gradlew build)`. After that, no ordering is needed.
+
 ```bash
 ./gradlew build
 ```

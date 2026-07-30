@@ -45,9 +45,16 @@ jobs:
             ${{ runner.os }}-gradle-${{ matrix.project }}-
             ${{ runner.os }}-gradle-
 
-      # The mods pull TrarnCore in via includeBuild('../TrarnCore'), which resolves because this
-      # is a monorepo — the sibling is always present in the checkout. Building TrarnCore on its
-      # own as well catches library-only breakage that a mod build might not surface.
+      # TrarnCore must be built before any mod that consumes it, even though the mods pull it in
+      # via includeBuild. Loom inspects a modImplementation dependency's jar at *configuration*
+      # time (ArtifactMetadata.create) to decide whether it is a mod — that happens before the
+      # task graph runs, so Gradle never gets the chance to build the included jar first. Without
+      # this step every mod fails with NoSuchFileException on trarncore-*.jar in a clean checkout.
+      - name: Build TrarnCore first
+        if: matrix.project != 'TrarnCore'
+        working-directory: TrarnCore
+        run: ./gradlew build --stacktrace
+
       - name: Build
         working-directory: ${{ matrix.project }}
         run: ./gradlew build --stacktrace
