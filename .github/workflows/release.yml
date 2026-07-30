@@ -1,0 +1,80 @@
+name: Release
+
+# Monorepo, so a bare "v1.2.3" tag would be ambiguous. Tags name the project they release:
+#
+#   containerutil-v0.1.0
+#   claimviz-v0.0.6
+#   trarncore-v0.1.0
+#
+# The version in the tag is what gets built, overriding gradle.properties — so tagging is the
+# single action that cuts a release, with nothing to remember to commit first.
+on:
+  push:
+    tags:
+      - '*-v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve project and version from tag
+        id: tag
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          MOD_ID="${TAG%%-v*}"
+          VERSION="${TAG#*-v}"
+
+          case "$MOD_ID" in
+            claimviz)         DIR=ClaimViz         ; PROP=mod_version ;;
+            simdistance)      DIR=SimDistance      ; PROP=mod_version ;;
+            easyportallinker) DIR=EasyPortalLinker ; PROP=mod_version ;;
+            containerutil)    DIR=ContainerUtil    ; PROP=mod_version ;;
+            rswitch)          DIR=RSwitch          ; PROP=mod_version ;;
+            # The library deliberately uses its own property name, so that a mod release passing
+            # -Pmod_version cannot re-version the library through the composite build.
+            trarncore)        DIR=TrarnCore        ; PROP=lib_version ;;
+            *)
+              echo "::error::Unknown project '$MOD_ID' in tag '$TAG'. Expected <project>-v<version>, e.g. containerutil-v0.1.0."
+              exit 1
+              ;;
+          esac
+
+          echo "dir=$DIR"         >> "$GITHUB_OUTPUT"
+          echo "prop=$PROP"       >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle and Loom
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ steps.tag.outputs.dir }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'versions.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-${{ steps.tag.outputs.dir }}-
+            ${{ runner.os }}-gradle-
+
+      - name: Build
+        working-directory: ${{ steps.tag.outputs.dir }}
+        run: ./gradlew build --stacktrace -P${{ steps.tag.outputs.prop }}=${{ steps.tag.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.tag.outputs.dir }} ${{ steps.tag.outputs.version }}
+          # *[^s].jar excludes the -sources.jar sitting next to it.
+          files: ${{ steps.tag.outputs.dir }}/build/libs/*[^s].jar
+          generate_release_notes: true

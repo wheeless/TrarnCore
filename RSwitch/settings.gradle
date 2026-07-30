@@ -1,0 +1,17 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'rswitch'
+
+// Build TrarnCore from source alongside this mod. Gradle substitutes the
+// net.trarncore:trarncore dependency with the sibling build's output, so there is no publish
+// step and no stale-cache hazard.
+includeBuild('../TrarnCore')

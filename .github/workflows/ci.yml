@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Each project is its own standalone Gradle build (they are not subprojects of one root build),
+# so CI runs them as a matrix rather than a single ./gradlew at the repo root. That also gives a
+# per-mod pass/fail in the checks list instead of one opaque result.
+jobs:
+  build:
+    name: Build ${{ matrix.project }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - TrarnCore
+          - ClaimViz
+          - SimDistance
+          - EasyPortalLinker
+          - ContainerUtil
+          - RSwitch
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle and Loom
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ matrix.project }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'versions.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-${{ matrix.project }}-
+            ${{ runner.os }}-gradle-
+
+      # The mods pull TrarnCore in via includeBuild('../TrarnCore'), which resolves because this
+      # is a monorepo — the sibling is always present in the checkout. Building TrarnCore on its
+      # own as well catches library-only breakage that a mod build might not surface.
+      - name: Build
+        working-directory: ${{ matrix.project }}
+        run: ./gradlew build --stacktrace
+
+      # TrarnCore is bundled inside each mod and never installed on its own, so there is no
+      # artifact worth publishing for it.
+      - name: Upload jar
+        if: matrix.project != 'TrarnCore'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.project }}-${{ github.sha }}
+          # *[^s].jar excludes the -sources.jar sitting next to it.
+          path: ${{ matrix.project }}/build/libs/*[^s].jar
+          if-no-files-found: error
+          retention-days: 90

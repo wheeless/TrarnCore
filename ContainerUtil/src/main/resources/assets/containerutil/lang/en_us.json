@@ -1,0 +1,6 @@
+{
+  "category.containerutil": "ContainerUtil",
+  "key.containerutil.toggle": "Toggle Container Highlights",
+  "key.containerutil.search": "Open Container Search",
+  "key.containerutil.clear_track": "Clear Tracked Container"
+}

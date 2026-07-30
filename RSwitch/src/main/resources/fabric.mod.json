@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "rswitch",
+  "version": "${version}",
+  "name": "RSwitch",
+  "description": "One key swaps the item in your hand with the inventory slot directly above it — including when that slot is empty, so it doubles as an instant way to clear your hand. Client-side only.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/RSwitch",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.rswitch.RSwitch"
+    ],
+    "modmenu": [
+      "net.rswitch.integration.ModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21 <1.22",
+    "java": ">=21"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}

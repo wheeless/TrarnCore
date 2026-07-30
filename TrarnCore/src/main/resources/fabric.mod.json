@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "trarncore",
+  "version": "${version}",
+  "name": "TrarnCore",
+  "description": "Shared client-side plumbing for the Trarn Fabric mods: render primitives and see-through layers, local chat feedback, JSON config handling, keybind helpers and ModMenu/Cloth glue. Bundled inside each mod, not installed separately.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/TrarnCore",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.trarncore.TrarnCore"
+    ]
+  },
+  "accessWidener": "trarncore.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21 <1.22",
+    "java": ">=21"
+  }
+}

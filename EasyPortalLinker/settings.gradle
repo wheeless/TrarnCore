@@ -1,0 +1,17 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'easyportallinker'
+
+// Build TrarnCore from source alongside this mod. Gradle substitutes the net.trarncore:trarncore
+// dependency with the sibling build's output, so there is no publish step and no risk of building
+// against a stale cached copy of the library.
+includeBuild('../TrarnCore')

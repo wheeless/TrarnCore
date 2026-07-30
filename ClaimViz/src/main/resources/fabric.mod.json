@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "claimviz",
+  "version": "${version}",
+  "name": "ClaimViz",
+  "description": "Renders GriefPrevention claim boundaries and live player positions via SquareMap. No server-side component required.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/ClaimViz",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.claimviz.ClaimViz"
+    ],
+    "modmenu": [
+      "net.claimviz.integration.ModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21 <1.22",
+    "java": ">=21"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*",
+    "xaerominimap": "*"
+  }
+}

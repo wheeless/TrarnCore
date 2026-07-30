@@ -1,0 +1,80 @@
+plugins {
+    id 'fabric-loom' version '1.17-SNAPSHOT'
+    id 'maven-publish'
+}
+
+// ── Shared version pins ──────────────────────────────────────────────────────
+// Read from ../versions.properties so a Minecraft bump is one file for the whole family.
+// Falls back to this project's own gradle.properties when built standalone.
+def shared = new Properties()
+def sharedFile = rootProject.file("../versions.properties")
+if (sharedFile.exists()) {
+    sharedFile.withInputStream { shared.load(it) }
+}
+def pin = { String key -> shared.getProperty(key) ?: project.property(key) }
+
+// Deliberately not called mod_version: releasing a mod passes -Pmod_version, and CLI project
+// properties propagate into included builds, which would silently re-version the library too.
+version = project.lib_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/trarncore.accesswidener")
+}
+
+repositories {
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${pin('minecraft_version')}"
+    mappings "net.fabricmc:yarn:${pin('yarn_mappings')}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${pin('loader_version')}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${pin('fabric_version')}"
+
+    // Soft dependencies — compiled against, never bundled or required at runtime.
+    modCompileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
+    modCompileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+}
+
+// The sibling mods consume this through a Gradle composite build (`includeBuild('../TrarnCore')`
+// in their settings.gradle), so no publishing step is needed day to day — they always build
+// against the current source. This block exists so the library *can* be published if it ever
+// needs to be consumed from outside this directory:
+//   ./gradlew publishToMavenLocal
+// Loom wires components.java to the remapped jar, so what gets published is the
+// intermediary-mapped artifact a consumer actually needs.
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}

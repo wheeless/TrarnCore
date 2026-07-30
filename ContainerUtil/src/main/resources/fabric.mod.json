@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "containerutil",
+  "version": "${version}",
+  "name": "ContainerUtil",
+  "description": "Highlights every storage container around you in a distinct colour, remembers what you put in them, and lets you search your whole base for an item and get walked straight to it. Client-side only.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/ContainerUtil",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.containerutil.ContainerUtil"
+    ],
+    "modmenu": [
+      "net.containerutil.integration.ModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21 <1.22",
+    "java": ">=21"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}

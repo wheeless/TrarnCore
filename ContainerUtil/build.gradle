@@ -1,0 +1,109 @@
+plugins {
+    id 'fabric-loom' version '1.17-SNAPSHOT'
+    id 'maven-publish'
+}
+
+// ── Shared version pins ──────────────────────────────────────────────────────
+// Read from ../versions.properties so a Minecraft bump is one file for the whole family.
+// Falls back to this project's own gradle.properties when built standalone.
+def shared = new Properties()
+def sharedFile = rootProject.file("../versions.properties")
+if (sharedFile.exists()) {
+    sharedFile.withInputStream { shared.load(it) }
+}
+def pin = { String key -> shared.getProperty(key) ?: project.property(key) }
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+// No accessWidener here — TrarnCore declares the one we need (RenderLayer.of) and Fabric applies
+// access wideners from nested jars, so it is opened once for the whole family.
+
+repositories {
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+    maven {
+        // Only for cloth's basic-math (see the compileOnly note below).
+        name = "shedaniel"
+        url = "https://maven.shedaniel.me/"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${pin('minecraft_version')}"
+    mappings "net.fabricmc:yarn:${pin('yarn_mappings')}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${pin('loader_version')}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${pin('fabric_version')}"
+
+    // Shared plumbing, bundled into this mod's jar so nobody installs it separately.
+    modImplementation "net.trarncore:trarncore:${pin('trarncore_version')}"
+    include "net.trarncore:trarncore:${pin('trarncore_version')}"
+
+    // Soft dependencies — compile against but do not bundle or require at runtime
+    modCompileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
+    modCompileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
+
+    // Cloth's colour-picker entry has overloads typed on me.shedaniel.math.Color, so javac needs
+    // that class on the classpath to resolve *any* startColorField call — including the plain-int
+    // one we actually use. Cloth ships it as a jar-in-jar, so it exists at runtime but not at
+    // compile time; this pulls it in for compilation only and is never bundled or required.
+    compileOnly "me.shedaniel.cloth:basic-math:${pin('basic_math_version')}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+// ── Export the built jar ─────────────────────────────────────────────────────
+// Drops the finished mod jar into ../ModBuilds so every mod's output sits in one folder, ready to
+// copy into a Minecraft instance. Only the remapped mod jar goes there — no sources jar, since
+// that must never end up in a mods folder. Older versions of *this* mod are cleared first, so the
+// folder only ever holds the current build and a version bump cannot leave a stale jar behind.
+def modBuildsDir = rootProject.file("../ModBuilds")
+
+tasks.register('exportJar') {
+    dependsOn tasks.named('remapJar')
+    doLast {
+        modBuildsDir.mkdirs()
+        def base = project.archives_base_name
+        modBuildsDir.listFiles()?.each { f ->
+            if (f.isFile() && f.name.startsWith(base + "-") && f.name.endsWith(".jar")) {
+                f.delete()
+            }
+        }
+        copy {
+            from tasks.named('remapJar').get().archiveFile
+            into modBuildsDir
+        }
+        logger.lifecycle("exported ${base} -> ${modBuildsDir}")
+    }
+}
+
+tasks.named('build') { finalizedBy 'exportJar' }

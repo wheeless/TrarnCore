@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "easyportallinker",
+  "version": "${version}",
+  "name": "EasyPortalLinker",
+  "description": "Point a wooden shovel at a Nether portal and EasyPortalLinker shows you EXACTLY where its counterpart must go in the other dimension — a full-height highlighted column from bedrock to build height, an axis-matched ghost outline of the obsidian frame at the recommended Y, and the exact coordinates. Build to the outline for a reliable link. Works both ways (Overworld <-> Nether). Client-side only.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/EasyPortalLinker",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.easyportallinker.EasyPortalLinker"
+    ],
+    "modmenu": [
+      "net.easyportallinker.integration.ModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21 <1.22",
+    "java": ">=21"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}
