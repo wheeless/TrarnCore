@@ -92,24 +92,38 @@ Mod versions are per-project, in each `gradle.properties`.
 
 ## Releasing
 
-Tags name the project they release, since a bare `v1.2.3` would be ambiguous in a monorepo:
+A bare `v1.2.3` tag would be ambiguous in a monorepo, so tags name what they release.
+[`release.yml`](.github/workflows/release.yml) supports two shapes.
 
+### Everything at once
+
+```bash
+git tag all-v0.1.0
+git push --tags
 ```
-<project-id>-v<version>
-```
+
+Builds all five mods and publishes **one** GitHub Release with all five jars attached. Each mod is
+built at its own configured version — the version in the tag is only the release label. That is
+deliberate: mod versions legitimately differ (ClaimViz is on `0.0.x` while the rest are on `0.1.x`),
+and forcing them all to one number would misreport what you actually shipped.
+
+### A single project
 
 ```bash
 git tag containerutil-v0.1.0
 git push --tags
 ```
 
-That triggers [`release.yml`](.github/workflows/release.yml), which builds that project at the
-version in the tag — overriding `gradle.properties`, so tagging is the single action that cuts a
-release — and publishes a GitHub Release with the jar attached.
+Builds just that project, **at the version in the tag** — overriding `gradle.properties`, so the
+tag is the single action that cuts the release, with nothing to remember to commit first.
 
-Valid project ids: `claimviz`, `containerutil`, `easyportallinker`, `simdistance`, `rswitch`,
-`trarncore`. Anything else fails the workflow with a clear message rather than silently building
+Valid ids: `claimviz`, `containerutil`, `easyportallinker`, `simdistance`, `rswitch`, `trarncore`,
+or `all`. Anything else fails the workflow with a clear message rather than silently building
 nothing.
+
+TrarnCore is excluded from `all-v*` on purpose — it is bundled inside every mod jar and is never
+installed separately, so it has no artifact worth attaching. Release it on its own if you ever want
+a tagged reference point for the library.
 
 ## CI
 

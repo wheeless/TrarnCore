@@ -1,13 +1,15 @@
 name: Release
 
-# Monorepo, so a bare "v1.2.3" tag would be ambiguous. Tags name the project they release:
+# Monorepo, so a bare "v1.2.3" tag would be ambiguous. Two tag shapes are supported:
 #
-#   containerutil-v0.1.0
-#   claimviz-v0.0.6
-#   trarncore-v0.1.0
+#   containerutil-v0.1.0   release ONE project, built at the version in the tag
+#   claimviz-v0.0.6            (the tag version overrides gradle.properties, so tagging is
+#   trarncore-v0.1.0            the single action that cuts a release)
 #
-# The version in the tag is what gets built, overriding gradle.properties — so tagging is the
-# single action that cuts a release, with nothing to remember to commit first.
+#   all-v0.1.0             release EVERY mod in one go, each built at its own configured
+#                          version. The version in the tag is only the release label — it is
+#                          deliberately not forced onto the mods, because their versions
+#                          legitimately differ (ClaimViz is on 0.0.x while the rest are 0.1.x).
 on:
   push:
     tags:
@@ -23,32 +25,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolve project and version from tag
+      - name: Resolve target(s) from tag
         id: tag
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          MOD_ID="${TAG%%-v*}"
+          TARGET="${TAG%%-v*}"
           VERSION="${TAG#*-v}"
 
-          case "$MOD_ID" in
-            claimviz)         DIR=ClaimViz         ; PROP=mod_version ;;
-            simdistance)      DIR=SimDistance      ; PROP=mod_version ;;
-            easyportallinker) DIR=EasyPortalLinker ; PROP=mod_version ;;
-            containerutil)    DIR=ContainerUtil    ; PROP=mod_version ;;
-            rswitch)          DIR=RSwitch          ; PROP=mod_version ;;
-            # The library deliberately uses its own property name, so that a mod release passing
-            # -Pmod_version cannot re-version the library through the composite build.
-            trarncore)        DIR=TrarnCore        ; PROP=lib_version ;;
-            *)
-              echo "::error::Unknown project '$MOD_ID' in tag '$TAG'. Expected <project>-v<version>, e.g. containerutil-v0.1.0."
-              exit 1
-              ;;
-          esac
-
-          echo "dir=$DIR"         >> "$GITHUB_OUTPUT"
-          echo "prop=$PROP"       >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$TARGET" = "all" ]; then
+            # Every mod, each at its own version. TrarnCore is excluded: it is bundled inside
+            # each mod and is never installed on its own, so it has no artifact worth releasing.
+            echo "dirs=ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch" >> "$GITHUB_OUTPUT"
+            echo "prop="                                                            >> "$GITHUB_OUTPUT"
+            echo "title=Mod bundle $VERSION"                                        >> "$GITHUB_OUTPUT"
+          else
+            case "$TARGET" in
+              claimviz)         DIR=ClaimViz         ; PROP=mod_version ;;
+              simdistance)      DIR=SimDistance      ; PROP=mod_version ;;
+              easyportallinker) DIR=EasyPortalLinker ; PROP=mod_version ;;
+              containerutil)    DIR=ContainerUtil    ; PROP=mod_version ;;
+              rswitch)          DIR=RSwitch          ; PROP=mod_version ;;
+              # The library deliberately uses its own property name, so that a mod release
+              # passing -Pmod_version cannot re-version the library through the composite build.
+              trarncore)        DIR=TrarnCore        ; PROP=lib_version ;;
+              *)
+                echo "::error::Unknown target '$TARGET' in tag '$TAG'. Expected <project>-v<version> (e.g. containerutil-v0.1.0) or all-v<version>."
+                exit 1
+                ;;
+            esac
+            echo "dirs=$DIR"                   >> "$GITHUB_OUTPUT"
+            echo "prop=$PROP=$VERSION"         >> "$GITHUB_OUTPUT"
+            echo "title=$DIR $VERSION"         >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -62,26 +71,44 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ steps.tag.outputs.dir }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'versions.properties') }}
+          key: ${{ runner.os }}-gradle-release-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'versions.properties') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-${{ steps.tag.outputs.dir }}-
+            ${{ runner.os }}-gradle-release-
             ${{ runner.os }}-gradle-
 
       # See the note in ci.yml: Loom reads the library jar at configuration time, so it has to
-      # exist on disk before a mod build is even configured.
+      # exist on disk before a mod build is even configured. Harmless when releasing TrarnCore
+      # itself — it just builds it once here and again below.
       - name: Build TrarnCore first
-        if: steps.tag.outputs.dir != 'TrarnCore'
         working-directory: TrarnCore
         run: ./gradlew build --stacktrace
 
       - name: Build
-        working-directory: ${{ steps.tag.outputs.dir }}
-        run: ./gradlew build --stacktrace -P${{ steps.tag.outputs.prop }}=${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          PROP_ARG=""
+          if [ -n "${{ steps.tag.outputs.prop }}" ]; then
+            PROP_ARG="-P${{ steps.tag.outputs.prop }}"
+          fi
+          for dir in ${{ steps.tag.outputs.dirs }}; do
+            echo "::group::Building $dir"
+            (cd "$dir" && ./gradlew build --stacktrace $PROP_ARG)
+            echo "::endgroup::"
+          done
+
+      - name: Collect jars
+        run: |
+          set -euo pipefail
+          mkdir -p release-jars
+          for dir in ${{ steps.tag.outputs.dirs }}; do
+            # *[^s].jar excludes the -sources.jar sitting next to it.
+            cp "$dir"/build/libs/*[^s].jar release-jars/
+          done
+          ls -la release-jars/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.tag.outputs.dir }} ${{ steps.tag.outputs.version }}
-          # *[^s].jar excludes the -sources.jar sitting next to it.
-          files: ${{ steps.tag.outputs.dir }}/build/libs/*[^s].jar
+          name: ${{ steps.tag.outputs.title }}
+          files: release-jars/*.jar
           generate_release_notes: true
