@@ -11,6 +11,7 @@ import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.util.Formatting;
 import net.trarncore.chat.ChatChannel;
+import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,9 @@ public class ClaimViz implements ClientModInitializer {
         ServerJoinHandler.register();
         ClaimRenderer.register();
         PlayerRenderer.register();
+
+        // Notify-only; see net.trarncore.update.UpdateChecker.
+        UpdateChecker.watch(MOD_ID, CHAT);
 
         LOGGER.info("ClaimViz initialized");
     }
