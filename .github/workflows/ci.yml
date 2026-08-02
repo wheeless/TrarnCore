@@ -24,6 +24,7 @@ jobs:
           - EasyPortalLinker
           - ContainerUtil
           - RSwitch
+          - TrustUI
 
     steps:
       - uses: actions/checkout@v4

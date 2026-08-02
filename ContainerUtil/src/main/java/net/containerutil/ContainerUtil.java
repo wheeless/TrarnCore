@@ -11,6 +11,7 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.util.Formatting;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.input.Keys;
+import net.trarncore.update.UpdateChecker;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,9 @@ public class ContainerUtil implements ClientModInitializer {
         ClientTickHandler.register();
         ContainerEspRenderer.register();
         HudRenderer.register();
+
+        // Notify-only; see net.trarncore.update.UpdateChecker.
+        UpdateChecker.watch(MOD_ID, CHAT);
 
         LOGGER.info("ContainerUtil initialized");
     }

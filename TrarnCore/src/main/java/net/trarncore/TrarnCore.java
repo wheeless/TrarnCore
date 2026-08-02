@@ -1,6 +1,8 @@
 package net.trarncore;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.trarncore.config.ConfigManager;
+import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +30,14 @@ public class TrarnCore implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Nothing to set up — the entrypoint exists purely so the log confirms which version
-        // actually won when several mods bundle different copies.
+        ConfigManager.load();
+
+        // Fabric runs library entrypoints before the mods that depend on them, so every
+        // UpdateChecker.watch() call has not happened yet at this point. start() only registers
+        // the tick and join listeners; the actual lookup is deferred until the player is in a
+        // world, by which time registration is long finished.
+        UpdateChecker.start();
+
         LOGGER.info("TrarnCore loaded");
     }
 }

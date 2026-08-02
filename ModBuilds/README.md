@@ -3,12 +3,12 @@
 **Generated — do not edit.** Every jar here is written by a mod's `exportJar` Gradle task, which
 runs automatically after `build`.
 
-The point is that all five finished mod jars sit in one folder ready to copy into a Minecraft
+The point is that all six finished mod jars sit in one folder ready to copy into a Minecraft
 instance's `mods/`, instead of being scattered across five `build/libs/` directories.
 
 ## What lands here
 
-Only the remapped mod jar for each of the five mods. Deliberately absent:
+Only the remapped mod jar for each of the six mods. Deliberately absent:
 
 - **`-sources.jar`** files — they live in `build/libs/` and must never end up in a mods folder.
 - **TrarnCore** — it is bundled *inside* each mod jar via jar-in-jar, so it is never installed on
@@ -24,14 +24,14 @@ stale copy behind for you to copy by accident.
 cd ../ContainerUtil && ./gradlew build
 
 # all of them
-cd .. && for m in ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch; do
+cd .. && for m in ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI; do
   (cd "$m" && ./gradlew build)
 done
 ```
 
 ## Installing
 
-Copy all five together. They share the bundled TrarnCore library, and mixing a jar from before a
+Copy all six together. They share the bundled TrarnCore library, and mixing a jar from before a
 library change with jars from after it is exactly the mismatch that produces
 `NoClassDefFoundError` at startup.
 

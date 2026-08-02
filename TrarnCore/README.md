@@ -41,6 +41,10 @@ a Minecraft rendering change five times, and the four you touch least rot quietl
   class from loading when Cloth is absent.
 - **`util.Guarded`** / **`util.ErrorThrottle`** — run tick and render work without taking the game
   down, and rate-limit errors that would otherwise recur every frame.
+- **`update.UpdateChecker`** — tells the player when a newer release of an installed mod exists.
+  **Notification only**, never downloads or replaces anything. One request per launch answers every
+  mod, since they all live in one repo. See [the plan](../plans/update-checker.md) for why
+  self-updating is deliberately not done.
 
 ## What's deliberately *not* in it
 
@@ -60,6 +64,23 @@ note the trap that motivated the composite setup: a fixed version published to m
 cached by Gradle indefinitely, so a rebuilt library is silently ignored until you bump the version
 or clear `~/.gradle/caches/modules-2/files-2.1/net.trarncore`.
 
+### After changing this library, clear the remap cache
+
+Loom keeps its own remapped copy of every mod dependency, keyed by coordinates and version. Adding
+or changing anything here **without bumping `lib_version`** leaves that copy stale, and the mods
+compile against the old API — reporting `package net.trarncore.x does not exist` for code that
+plainly exists, or worse, building fine and failing at runtime.
+
+`./gradlew clean` does **not** fix this: the cache lives in `.gradle/`, not `build/`. Clear it
+explicitly from the repo root:
+
+```bash
+rm -rf */.gradle/loom-cache/remapped_mods
+```
+
+Only a concern during active library development. CI is unaffected, since a fresh checkout has no
+`.gradle/` to go stale. Bumping `lib_version` also sidesteps it, because the cache key changes.
+
 ```gradle
 // build.gradle
 modImplementation "net.trarncore:trarncore:${pin('trarncore_version')}"
@@ -77,7 +98,17 @@ own and no longer needs to.
 
 Each mod bundles its own copy and Fabric loads the highest version it finds, so a mod built
 against 1.0 may end up running against a 1.2 bundled by a sibling. **Keep changes additive** — add
-methods, don't change or remove signatures — and rebuild all five after a library change.
+methods, don't change or remove signatures — and rebuild every mod after a library change.
+
+### `lib_version` must only ever go up
+
+Because Fabric picks the highest bundled copy, the version is a **resolution key**, not a maturity
+label. Lowering it means any older jar still lying in a mods folder outranks the new library and
+gets loaded instead — code compiled against the newer API then dies with `NoClassDefFoundError` on
+classes that plainly exist in the jar you just built.
+
+This is not hypothetical: dropping 1.0.0 to 0.1.0 did exactly that, because a stale mod jar
+bundling 1.0.0 shadowed the new 0.1.0 everywhere. Hence 1.1.0.
 
 ## Version pins
 

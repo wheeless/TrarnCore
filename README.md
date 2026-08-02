@@ -20,6 +20,7 @@ none of them changes anything on a server you connect to.
 | **[ContainerUtil](ContainerUtil)** | Highlights every storage container around you in a distinct colour, remembers what you put in them, and lets you search your whole base for an item — then walks you to it with a beam and a direction arrow. | [README](ContainerUtil/README.md) |
 | **[EasyPortalLinker](EasyPortalLinker)** | Makes Nether-portal linking foolproof. Select a portal with a wooden shovel and see exactly where its counterpart must go, as a ghost frame you build to. | [README](EasyPortalLinker/README.md) |
 | **[SimDistance](SimDistance)** | Draws a translucent wall at the edge of your simulation-distance region, so you can see which chunks are actually being ticked — the thing that decides whether your farms run. | [README](SimDistance/README.md) |
+| **[TrustUI](TrustUI)** | A social-menu-style screen for managing GriefPrevention claim trust. Shows online players with their heads, marks who already has permissions in the claim you are standing in, and grants or revokes access with a click. | [README](TrustUI/README.md) |
 | **[RSwitch](RSwitch)** | One key swaps the item in your hand with the inventory slot directly above it. Works with an empty slot too, so it doubles as an instant way to clear your hand. | [README](RSwitch/README.md) |
 
 ### The library
@@ -28,7 +29,7 @@ none of them changes anything on a server you connect to.
 | --- | --- | --- |
 | **[TrarnCore](TrarnCore)** | Shared plumbing: render layers and primitives, local chat feedback, JSON config, keybind helpers, ModMenu/Cloth glue, error throttling. Bundled into every mod via jar-in-jar. | [README](TrarnCore/README.md) |
 
-It exists because the five mods had accumulated five copies of the same `ConfigManager`, `Chat` and
+It exists because the mods had accumulated a copy each of the same `ConfigManager`, `Chat` and
 `ModMenuIntegration`, and had reimplemented the same vertex-emitting code four times. More
 importantly, the render layer — the most version-fragile code here — had already drifted between
 them. One copy means a Minecraft rendering change is fixed once.
@@ -56,7 +57,7 @@ Or build everything:
 
 ```bash
 (cd TrarnCore && ./gradlew build)
-for m in ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch; do
+for m in ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI; do
   (cd "$m" && ./gradlew build)
 done
 ```
@@ -67,11 +68,11 @@ library and rebuilding any mod picks the change up immediately. There is no publ
 
 ### Where the jars go
 
-Every mod build also copies its finished jar into **[`ModBuilds/`](ModBuilds)**, so all five sit in
+Every mod build also copies its finished jar into **[`ModBuilds/`](ModBuilds)**, so all six sit in
 one folder ready to drop into a Minecraft instance. Sources jars and the library are deliberately
 excluded — see [that folder's README](ModBuilds/README.md).
 
-Install all five together. They share the bundled library, and mixing a jar built before a library
+Install all six together. They share the bundled library, and mixing a jar built before a library
 change with jars built after it is the one combination that produces a `NoClassDefFoundError` at
 startup.
 
@@ -102,7 +103,7 @@ git tag all-v0.1.0
 git push --tags
 ```
 
-Builds all five mods and publishes **one** GitHub Release with all five jars attached. Each mod is
+Builds all six mods and publishes **one** GitHub Release with all six jars attached. Each mod is
 built at its own configured version — the version in the tag is only the release label. That is
 deliberate: mod versions legitimately differ (ClaimViz is on `0.0.x` while the rest are on `0.1.x`),
 and forcing them all to one number would misreport what you actually shipped.
@@ -117,8 +118,8 @@ git push --tags
 Builds just that project, **at the version in the tag** — overriding `gradle.properties`, so the
 tag is the single action that cuts the release, with nothing to remember to commit first.
 
-Valid ids: `claimviz`, `containerutil`, `easyportallinker`, `simdistance`, `rswitch`, `trarncore`,
-or `all`. Anything else fails the workflow with a clear message rather than silently building
+Valid ids: `claimviz`, `containerutil`, `easyportallinker`, `simdistance`, `rswitch`,
+`trustui`, `trarncore`, or `all`. Anything else fails the workflow with a clear message rather than silently building
 nothing.
 
 TrarnCore is excluded from `all-v*` on purpose — it is bundled inside every mod jar and is never
@@ -127,7 +128,7 @@ a tagged reference point for the library.
 
 ## CI
 
-[`ci.yml`](.github/workflows/ci.yml) builds all six projects as a matrix on every push and PR to
+[`ci.yml`](.github/workflows/ci.yml) builds all seven projects as a matrix on every push and PR to
 `main`, so each gets its own pass/fail in the checks list. Mod jars are uploaded as build
 artifacts with 90-day retention.
 
@@ -160,7 +161,8 @@ instance. See each mod's README.
 ├─ ContainerUtil/
 ├─ EasyPortalLinker/
 ├─ SimDistance/
-└─ RSwitch/
+├─ RSwitch/
+└─ TrustUI/
 ```
 
 ## License

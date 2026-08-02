@@ -7,6 +7,7 @@ import net.rswitch.config.ConfigManager;
 import net.rswitch.event.ClientTickHandler;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.input.Keys;
+import net.trarncore.update.UpdateChecker;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,9 @@ public class RSwitch implements ClientModInitializer {
         SWAP = Keys.register("key.rswitch.swap", GLFW.GLFW_KEY_R, KeyBinding.Category.INVENTORY);
 
         ClientTickHandler.register();
+
+        // Notify-only; see net.trarncore.update.UpdateChecker.
+        UpdateChecker.watch(MOD_ID, CHAT);
 
         LOGGER.info("RSwitch initialized");
     }
