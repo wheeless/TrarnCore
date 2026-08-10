@@ -1,4 +1,5 @@
 {
+  "key.category.containerutil.main": "ContainerUtil",
   "category.containerutil": "ContainerUtil",
   "key.containerutil.toggle": "Toggle Container Highlights",
   "key.containerutil.search": "Open Container Search",

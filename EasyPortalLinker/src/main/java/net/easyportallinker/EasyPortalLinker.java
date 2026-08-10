@@ -1,9 +1,7 @@
 package net.easyportallinker;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.easyportallinker.config.ConfigManager;
 import net.easyportallinker.event.ClientTickHandler;
 import net.easyportallinker.event.SelectionHandler;
@@ -13,6 +11,7 @@ import net.easyportallinker.render.PortalLinkRenderer;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
+import net.trarncore.input.Keys;
 import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,26 +40,11 @@ public class EasyPortalLinker implements ClientModInitializer {
         enabled = ConfigManager.get().enabled;
         selection = ConfigManager.get().selection;
 
-        TOGGLE_OVERLAY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.easyportallinker.toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_P,
-            KeyMapping.Category.MISC
-        ));
+        TOGGLE_OVERLAY = Keys.register(MOD_ID, "key.easyportallinker.toggle", GLFW.GLFW_KEY_P);
         // Unbound by default so it never clashes; bind it in Options → Controls if you want it.
-        CLEAR_SELECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.easyportallinker.clear",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_UNKNOWN,
-            KeyMapping.Category.MISC
-        ));
+        CLEAR_SELECTION = Keys.register(MOD_ID, "key.easyportallinker.clear", Keys.UNBOUND);
         // Press to lock the target Y to your current level; sneak + press to unlock. Rebindable.
-        LOCK_TARGET_Y = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.easyportallinker.lockcurrenty",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_K,
-            KeyMapping.Category.MISC
-        ));
+        LOCK_TARGET_Y = Keys.register(MOD_ID, "key.easyportallinker.lockcurrenty", GLFW.GLFW_KEY_K);
 
         ClientTickHandler.register();
         SelectionHandler.register();

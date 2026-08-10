@@ -1,4 +1,5 @@
 {
+  "key.category.claimviz.main": "ClaimViz",
   "category.claimviz": "ClaimViz",
   "key.claimviz.toggle_claims": "Toggle Claim Borders",
   "key.claimviz.toggle_players": "Toggle Live Players",

@@ -39,16 +39,13 @@ public class ContainerUtil implements ClientModInitializer {
         // Numpad 3 rather than the main-row 3: the top-row number keys are vanilla hotbar
         // slots, and a toggle that also swaps your held item every time you press it is a
         // bug report waiting to happen. Rebindable in Options → Controls.
-        TOGGLE_HIGHLIGHTS = Keys.register(
-            "key.containerutil.toggle", GLFW.GLFW_KEY_KP_3, KeyMapping.Category.MISC);
+        TOGGLE_HIGHLIGHTS = Keys.register(MOD_ID, "key.containerutil.toggle", GLFW.GLFW_KEY_KP_3);
 
         // Unbound by default — the search screen is a deliberate action, and picking a default
         // key here would collide with something on most people's setups.
-        OPEN_SEARCH = Keys.register(
-            "key.containerutil.search", Keys.UNBOUND, KeyMapping.Category.MISC);
+        OPEN_SEARCH = Keys.register(MOD_ID, "key.containerutil.search", Keys.UNBOUND);
 
-        CLEAR_TRACK = Keys.register(
-            "key.containerutil.clear_track", Keys.UNBOUND, KeyMapping.Category.MISC);
+        CLEAR_TRACK = Keys.register(MOD_ID, "key.containerutil.clear_track", Keys.UNBOUND);
 
         ContentCapture.register();
         WorldJoinHandler.register();

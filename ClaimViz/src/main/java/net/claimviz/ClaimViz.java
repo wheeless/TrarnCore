@@ -5,12 +5,11 @@ import net.claimviz.event.ServerJoinHandler;
 import net.claimviz.render.ClaimRenderer;
 import net.claimviz.render.PlayerRenderer;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
-import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
+import net.trarncore.input.Keys;
 import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,26 +33,9 @@ public class ClaimViz implements ClientModInitializer {
     public void onInitializeClient() {
         ConfigManager.load();
 
-        KeyMapping.Category category = KeyMapping.Category.MISC;
-
-        TOGGLE_CLAIMS = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.claimviz.toggle_claims",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V,
-            category
-        ));
-        TOGGLE_PLAYERS = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.claimviz.toggle_players",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_P,
-            category
-        ));
-        OPEN_MAP = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.claimviz.open_map",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_M,
-            category
-        ));
+        TOGGLE_CLAIMS = Keys.register(MOD_ID, "key.claimviz.toggle_claims", GLFW.GLFW_KEY_V);
+        TOGGLE_PLAYERS = Keys.register(MOD_ID, "key.claimviz.toggle_players", GLFW.GLFW_KEY_P);
+        OPEN_MAP = Keys.register(MOD_ID, "key.claimviz.open_map", GLFW.GLFW_KEY_M);
 
         ServerJoinHandler.register();
         ClaimRenderer.register();

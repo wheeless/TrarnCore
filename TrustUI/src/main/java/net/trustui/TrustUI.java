@@ -31,7 +31,7 @@ public class TrustUI implements ClientModInitializer {
 
         // Unbound by default: this opens a full screen, and any default would collide with
         // something on most setups.
-        OPEN_MENU = Keys.register("key.trustui.open", Keys.UNBOUND, KeyMapping.Category.MISC);
+        OPEN_MENU = Keys.register(MOD_ID, "key.trustui.open", Keys.UNBOUND);
 
         TrustListReader.register();
 

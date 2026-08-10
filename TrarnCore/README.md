@@ -35,8 +35,10 @@ a Minecraft rendering change five times, and the four you touch least rot quietl
   prefix colour.
 - **`config.JsonConfig<T>`** + **`ValidatedConfig`** — JSON config load/save with a validation
   hook that runs after every load and before every save.
-- **`input.Keys`** — keybind registration, and a `whenPressed` helper that drains the press queue
-  properly.
+- **`input.Keys`** — keybind registration, a per-mod controls category, and a `whenPressed` helper
+  that drains the press queue properly. `Keys.register(MOD_ID, key, glfwKey)` files the bind under
+  the mod's own heading in Options → Controls rather than dumping it into the shared **Misc** list
+  with every other mod's.
 - **`integration.ClothModMenuIntegration`** — ModMenu entrypoint base that keeps the Cloth screen
   class from loading when Cloth is absent.
 - **`util.Guarded`** / **`util.ErrorThrottle`** — run tick and render work without taking the game

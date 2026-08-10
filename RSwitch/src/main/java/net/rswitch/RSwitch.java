@@ -27,7 +27,7 @@ public class RSwitch implements ClientModInitializer {
         ConfigManager.load();
 
         // R is unbound in vanilla, so this is a free key on a default setup.
-        SWAP = Keys.register("key.rswitch.swap", GLFW.GLFW_KEY_R, KeyMapping.Category.INVENTORY);
+        SWAP = Keys.register(MOD_ID, "key.rswitch.swap", GLFW.GLFW_KEY_R);
 
         ClientTickHandler.register();
 

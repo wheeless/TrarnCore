@@ -96,6 +96,13 @@ that way — it is why a Minecraft bump is small.
 buffer ends the first. Finish and flush one layer before requesting the next; never hold a quad
 buffer and a line buffer simultaneously. Symptom: `IllegalStateException: Not building!`.
 
+**Keybinds register through `Keys.register(MOD_ID, key, glfwKey)`.** That files them under the
+mod's own category in Options → Controls. Vanilla's `KeyMapping.Category` constants are shared, so
+`MISC` puts every sibling's binds in one undifferentiated list. The category needs a
+`key.category.<modid>.main` entry in the mod's lang file or the screen shows the raw key.
+`Category.register` also throws on a duplicate id rather than returning the existing one — hence
+the cache in `Keys`; never call it directly.
+
 **Player-facing messages go to local chat, never the action bar.** Use each mod's `ChatChannel`
 (`TrarnCore/chat`). One exception, deliberate: ClaimViz's persistent claim bar, which refreshes
 every tick and so must overwrite itself.

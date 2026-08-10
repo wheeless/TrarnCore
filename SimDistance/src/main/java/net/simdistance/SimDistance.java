@@ -1,15 +1,14 @@
 package net.simdistance;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.simdistance.config.ConfigManager;
 import net.simdistance.event.ClientTickHandler;
 import net.simdistance.render.SimDistanceRenderer;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
+import net.trarncore.input.Keys;
 import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +31,7 @@ public class SimDistance implements ClientModInitializer {
         ConfigManager.load();
         enabled = ConfigManager.get().enabled;
 
-        TOGGLE_BORDER = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.simdistance.toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_G,
-            KeyMapping.Category.MISC
-        ));
+        TOGGLE_BORDER = Keys.register(MOD_ID, "key.simdistance.toggle", GLFW.GLFW_KEY_G);
 
         ClientTickHandler.register();
         SimDistanceRenderer.register();
