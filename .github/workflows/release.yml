@@ -6,10 +6,10 @@ name: Release
 #   claimviz-v0.0.6            (the tag version overrides gradle.properties, so tagging is
 #   trarncore-v0.1.0            the single action that cuts a release)
 #
-#   all-v0.1.0             release EVERY mod in one go, each built at its own configured
+#   all-v0.3.0             release EVERY mod in one go, each built at its own configured
 #                          version. The version in the tag is only the release label — it is
 #                          deliberately not forced onto the mods, because their versions
-#                          legitimately differ (ClaimViz is on 0.0.x while the rest are 0.1.x).
+#                          legitimately differ (ClaimViz is on 0.1.x while the rest are 0.2.x).
 on:
   push:
     tags:
@@ -59,6 +59,12 @@ jobs:
             echo "prop=$PROP=$VERSION"         >> "$GITHUB_OUTPUT"
             echo "title=$DIR $VERSION"         >> "$GITHUB_OUTPUT"
           fi
+
+          # Every release states its Minecraft target up front. These jars are useless on the
+          # wrong version and the jar filenames carry only the mod version, so leaving it to
+          # the generated commit list is how someone ends up installing a 26.x jar on 1.21.
+          MC=$(grep '^minecraft_version=' versions.properties | cut -d= -f2)
+          echo "mc=$MC" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java 25
         uses: actions/setup-java@v4
@@ -113,3 +119,11 @@ jobs:
           name: ${{ steps.tag.outputs.title }}
           files: release-jars/*.jar
           generate_release_notes: true
+          body: |
+            **Minecraft ${{ steps.tag.outputs.mc }}** · Fabric · requires **Java 25**
+
+            Install the jars from this release *together* — they share a bundled copy of
+            TrarnCore, and mixing them with jars from an older release is the one combination
+            that fails at startup with `NoClassDefFoundError`. Delete the previous jars first
+            rather than adding these alongside them.
+

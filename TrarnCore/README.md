@@ -2,7 +2,7 @@
 
 Shared client-side plumbing for the Fabric mods in this directory: [ClaimViz](../ClaimViz),
 [SimDistance](../SimDistance), [EasyPortalLinker](../EasyPortalLinker),
-[ContainerUtil](../ContainerUtil) and [RSwitch](../RSwitch).
+[ContainerUtil](../ContainerUtil), [RSwitch](../RSwitch) and [TrustUI](../TrustUI).
 
 **Not installed separately.** It is bundled inside each mod's jar via jar-in-jar, so nobody
 downloading one of those mods needs to know this exists.
@@ -108,7 +108,8 @@ gets loaded instead — code compiled against the newer API then dies with `NoCl
 classes that plainly exist in the jar you just built.
 
 This is not hypothetical: dropping 1.0.0 to 0.1.0 did exactly that, because a stale mod jar
-bundling 1.0.0 shadowed the new 0.1.0 everywhere. Hence 1.1.0.
+bundling 1.0.0 shadowed the new 0.1.0 everywhere. Recovering from it needed 1.1.0; the
+Minecraft 26.1.2 port is 1.2.0.
 
 ## Version pins
 

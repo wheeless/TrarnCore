@@ -99,20 +99,23 @@ A bare `v1.2.3` tag would be ambiguous in a monorepo, so tags name what they rel
 ### Everything at once
 
 ```bash
-git tag all-v0.1.0
-git push --tags
+git tag all-v0.3.0
+git push origin all-v0.3.0
 ```
 
 Builds all six mods and publishes **one** GitHub Release with all six jars attached. Each mod is
 built at its own configured version — the version in the tag is only the release label. That is
-deliberate: mod versions legitimately differ (ClaimViz is on `0.0.x` while the rest are on `0.1.x`),
+deliberate: mod versions legitimately differ (ClaimViz is on `0.1.x` while the rest are on `0.2.x`),
 and forcing them all to one number would misreport what you actually shipped.
+
+The release notes lead with the Minecraft version from `versions.properties`, because the jar
+filenames carry only the mod version and these jars are useless on the wrong Minecraft.
 
 ### A single project
 
 ```bash
-git tag containerutil-v0.1.0
-git push --tags
+git tag containerutil-v0.2.0
+git push origin containerutil-v0.2.0
 ```
 
 Builds just that project, **at the version in the tag** — overriding `gradle.properties`, so the
