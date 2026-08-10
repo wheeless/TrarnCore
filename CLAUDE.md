@@ -103,6 +103,14 @@ mod's own category in Options → Controls. Vanilla's `KeyMapping.Category` cons
 `Category.register` also throws on a duplicate id rather than returning the existing one — hence
 the cache in `Keys`; never call it directly.
 
+**Flush world text before the render event returns.** `Font.drawInBatch` buffers into layers it
+picks internally, so they cannot be ended by name — call `endBatch()` (no argument) after the
+labels, while the transform that billboarded them is still in effect. Relying on the level
+renderer to drain them worked on 1.21.11 and does not on 26.x: the leftover batch is flushed under
+a different transform, and the labels swing around their anchor as the camera turns. Guard the
+flush on having actually drawn something, so it does not drain layers the world renderer means to
+draw itself.
+
 **Player-facing messages go to local chat, never the action bar.** Use each mod's `ChatChannel`
 (`TrarnCore/chat`). One exception, deliberate: ClaimViz's persistent claim bar, which refreshes
 every tick and so must overwrite itself.

@@ -170,6 +170,14 @@ public class PlayerRenderer {
 
             matrices.popPose();
         }
+
+        // Flush while the world transform that billboarded the tags is still in effect. Font
+        // picks its own layers internally so they cannot be ended by name — hence a blanket
+        // flush. Leaving them for the level renderer to drain is what made the tags swing
+        // around their anchor as the camera turned.
+        if (!players.isEmpty() && consumers instanceof MultiBufferSource.BufferSource imm) {
+            imm.endBatch();
+        }
     }
 
     // ── HUD overlay: skin face icon ──────────────────────────────────────────

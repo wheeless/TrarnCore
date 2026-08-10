@@ -100,6 +100,14 @@ public class PortalLinkRenderer {
         if (cfg.showFloatingCoords) {
             if (inDest) drawTargetLabel(cfg, client, matrices, consumers, camera, cam, world, sel, playerY);
             else drawSourceLabel(client, matrices, consumers, camera, cam, sel);
+
+            // Flush while the world transform that billboarded the labels is still in effect.
+            // Font picks its own layers internally so they cannot be ended by name — hence a
+            // blanket flush. Leaving them for the level renderer to drain is what made the
+            // labels swing around their anchor as the camera turned.
+            if (consumers instanceof MultiBufferSource.BufferSource imm) {
+                imm.endBatch();
+            }
         }
     }
 

@@ -142,6 +142,14 @@ public class ClaimRenderer {
                 placeLabelsOnEdge(text, color, tw, claim.minZ(), claim.maxZ(), claim.maxX(), false,
                     labelY, spacing, cam, matrices, consumers, client, camera);
             }
+
+            // Text must be flushed here, while the world transform that billboarded it is still
+            // the one in effect. Font picks its own layers internally so they cannot be ended by
+            // name — hence a blanket flush. Leaving them buffered for the level renderer to drain
+            // is what made the labels swing around their anchor as the camera turned.
+            if (!nearby.isEmpty() && consumers instanceof MultiBufferSource.BufferSource imm) {
+                imm.endBatch();
+            }
         }
     }
 
