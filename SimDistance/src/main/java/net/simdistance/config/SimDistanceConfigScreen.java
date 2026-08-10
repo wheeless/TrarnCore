@@ -3,8 +3,8 @@ package net.simdistance.config;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.simdistance.SimDistance;
 
 /**
@@ -18,7 +18,7 @@ public class SimDistanceConfigScreen {
 
         ConfigBuilder builder = ConfigBuilder.create()
             .setParentScreen(parent)
-            .setTitle(Text.literal("SimDistance Settings"))
+            .setTitle(Component.literal("SimDistance Settings"))
             .setSavingRunnable(() -> {
                 ConfigManager.save();
                 // Keep the render loop's in-memory flag in sync with the saved value.
@@ -26,26 +26,26 @@ public class SimDistanceConfigScreen {
             });
 
         ConfigEntryBuilder entry = builder.entryBuilder();
-        ConfigCategory general = builder.getOrCreateCategory(Text.literal("General"));
+        ConfigCategory general = builder.getOrCreateCategory(Component.literal("General"));
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Enabled"), config.enabled)
+            .startBooleanToggle(Component.literal("Enabled"), config.enabled)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Master on/off for the simulation-distance border. Also bound to the toggle hotkey (default: G)."))
+            .setTooltip(Component.literal("Master on/off for the simulation-distance border. Also bound to the toggle hotkey (default: G)."))
             .setSaveConsumer(val -> config.enabled = val)
             .build()
         );
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Use Server Simulation Distance"), config.useServerSimulationDistance)
+            .startBooleanToggle(Component.literal("Use Server Simulation Distance"), config.useServerSimulationDistance)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Draw the border at the live simulation distance reported by the server (works in singleplayer too). Turn off to use a fixed chunk radius."))
+            .setTooltip(Component.literal("Draw the border at the live simulation distance reported by the server (works in singleplayer too). Turn off to use a fixed chunk radius."))
             .setSaveConsumer(val -> config.useServerSimulationDistance = val)
             .build()
         );
         general.addEntry(entry
-            .startIntSlider(Text.literal("Manual Chunk Radius"), config.manualChunkRadius, 1, 32)
+            .startIntSlider(Component.literal("Manual Chunk Radius"), config.manualChunkRadius, 1, 32)
             .setDefaultValue(8)
-            .setTooltip(Text.literal("Chunk radius used when 'Use Server Simulation Distance' is off, or as a fallback when the server reports nothing."))
+            .setTooltip(Component.literal("Chunk radius used when 'Use Server Simulation Distance' is off, or as a fallback when the server reports nothing."))
             .setSaveConsumer(val -> config.manualChunkRadius = val)
             .build()
         );
@@ -55,60 +55,60 @@ public class SimDistanceConfigScreen {
         // doesn't matter. (Cloth's color-picker field pulls in a type that isn't on
         // the compile classpath, so we avoid it.)
         general.addEntry(entry
-            .startIntSlider(Text.literal("Wall Color — Red"), (config.wallColor >> 16) & 0xFF, 0, 255)
+            .startIntSlider(Component.literal("Wall Color — Red"), (config.wallColor >> 16) & 0xFF, 0, 255)
             .setDefaultValue(0xFF)
-            .setTooltip(Text.literal("Red channel of the border wall (default: 255)."))
+            .setTooltip(Component.literal("Red channel of the border wall (default: 255)."))
             .setSaveConsumer(val -> config.wallColor = (config.wallColor & 0x00FFFF) | ((val & 0xFF) << 16))
             .build()
         );
         general.addEntry(entry
-            .startIntSlider(Text.literal("Wall Color — Green"), (config.wallColor >> 8) & 0xFF, 0, 255)
+            .startIntSlider(Component.literal("Wall Color — Green"), (config.wallColor >> 8) & 0xFF, 0, 255)
             .setDefaultValue(0x30)
-            .setTooltip(Text.literal("Green channel of the border wall (default: 48)."))
+            .setTooltip(Component.literal("Green channel of the border wall (default: 48)."))
             .setSaveConsumer(val -> config.wallColor = (config.wallColor & 0xFF00FF) | ((val & 0xFF) << 8))
             .build()
         );
         general.addEntry(entry
-            .startIntSlider(Text.literal("Wall Color — Blue"), config.wallColor & 0xFF, 0, 255)
+            .startIntSlider(Component.literal("Wall Color — Blue"), config.wallColor & 0xFF, 0, 255)
             .setDefaultValue(0x30)
-            .setTooltip(Text.literal("Blue channel of the border wall (default: 48)."))
+            .setTooltip(Component.literal("Blue channel of the border wall (default: 48)."))
             .setSaveConsumer(val -> config.wallColor = (config.wallColor & 0xFFFF00) | (val & 0xFF))
             .build()
         );
         general.addEntry(entry
-            .startIntSlider(Text.literal("Wall Opacity (%)"), config.wallOpacity, 0, 100)
+            .startIntSlider(Component.literal("Wall Opacity (%)"), config.wallOpacity, 0, 100)
             .setDefaultValue(22)
-            .setTooltip(Text.literal("How opaque the translucent wall is. 0 = invisible fill (use edge lines only)."))
+            .setTooltip(Component.literal("How opaque the translucent wall is. 0 = invisible fill (use edge lines only)."))
             .setSaveConsumer(val -> config.wallOpacity = val)
             .build()
         );
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Draw Edge Lines"), config.drawEdgeLines)
+            .startBooleanToggle(Component.literal("Draw Edge Lines"), config.drawEdgeLines)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Draw a crisp outline along the top and bottom edges and the vertical corners of the border."))
+            .setTooltip(Component.literal("Draw a crisp outline along the top and bottom edges and the vertical corners of the border."))
             .setSaveConsumer(val -> config.drawEdgeLines = val)
             .build()
         );
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Show Chunk Grid"), config.showChunkGrid)
+            .startBooleanToggle(Component.literal("Show Chunk Grid"), config.showChunkGrid)
             .setDefaultValue(false)
-            .setTooltip(Text.literal("Draw the internal per-chunk grid on the floor within the region, at your feet level."))
+            .setTooltip(Component.literal("Draw the internal per-chunk grid on the floor within the region, at your feet level."))
             .setSaveConsumer(val -> config.showChunkGrid = val)
             .build()
         );
 
         // ── Height ────────────────────────────────────────────────────────────
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Full World Height"), config.fullWorldHeight)
+            .startBooleanToggle(Component.literal("Full World Height"), config.fullWorldHeight)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Extend the wall from the world's bottom to its top. Turn off to use a fixed height around you."))
+            .setTooltip(Component.literal("Extend the wall from the world's bottom to its top. Turn off to use a fixed height around you."))
             .setSaveConsumer(val -> config.fullWorldHeight = val)
             .build()
         );
         general.addEntry(entry
-            .startIntSlider(Text.literal("Vertical Radius (blocks)"), config.verticalRadius, 8, 256)
+            .startIntSlider(Component.literal("Vertical Radius (blocks)"), config.verticalRadius, 8, 256)
             .setDefaultValue(48)
-            .setTooltip(Text.literal("Half-height of the wall around you, used only when 'Full World Height' is off."))
+            .setTooltip(Component.literal("Half-height of the wall around you, used only when 'Full World Height' is off."))
             .setSaveConsumer(val -> config.verticalRadius = val)
             .build()
         );

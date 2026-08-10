@@ -2,16 +2,16 @@ package net.easyportallinker.event;
 
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.easyportallinker.EasyPortalLinker;
 import net.easyportallinker.config.ConfigManager;
 import net.easyportallinker.config.EasyPortalLinkerConfig;
@@ -31,26 +31,26 @@ public class SelectionHandler {
 
     public static void register() {
         UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
-            if (hand != Hand.MAIN_HAND) return ActionResult.PASS;
-            return tryHandle(player, world) ? ActionResult.SUCCESS : ActionResult.PASS;
+            if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+            return tryHandle(player, world) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         });
         // Catch-all for when the crosshair isn't on a block (e.g. standing in a portal looking at
         // open air): the item-use event still fires.
         UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (hand != Hand.MAIN_HAND) return ActionResult.PASS;
-            return tryHandle(player, world) ? ActionResult.SUCCESS : ActionResult.PASS;
+            if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+            return tryHandle(player, world) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         });
     }
 
-    private static boolean tryHandle(PlayerEntity player, World world) {
+    private static boolean tryHandle(Player player, Level world) {
         try {
-            if (!world.isClient()) return false; // client-only mod; be defensive
-            if (!isSelectionItem(player.getMainHandStack())) return false;
+            if (!world.isClientSide()) return false; // client-only mod; be defensive
+            if (!isSelectionItem(player.getMainHandItem())) return false;
 
             EasyPortalLinkerConfig cfg = ConfigManager.get();
 
             // Sneak + item → clear the current selection.
-            if (cfg.requireSneakToClear && player.isSneaking()) {
+            if (cfg.requireSneakToClear && player.isShiftKeyDown()) {
                 if (EasyPortalLinker.selection != null) {
                     EasyPortalLinker.clearSelection();
                     msg("§c[EasyPortalLinker] Selection cleared");
@@ -76,14 +76,14 @@ public class SelectionHandler {
 
     private static boolean isSelectionItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        return stack.isOf(resolveItem(ConfigManager.get().selectionItem));
+        return stack.is(resolveItem(ConfigManager.get().selectionItem));
     }
 
     private static Item resolveItem(String id) {
         try {
             Identifier ident = Identifier.tryParse(id);
             if (ident != null) {
-                Item it = Registries.ITEM.get(ident);
+                Item it = BuiltInRegistries.ITEM.getValue(ident);
                 if (it != Items.AIR) return it;
             }
         } catch (Exception ignored) {

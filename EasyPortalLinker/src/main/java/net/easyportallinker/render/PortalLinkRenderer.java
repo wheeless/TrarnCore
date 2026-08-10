@@ -1,19 +1,18 @@
 package net.easyportallinker.render;
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.easyportallinker.EasyPortalLinker;
 import net.easyportallinker.config.ConfigManager;
 import net.easyportallinker.config.EasyPortalLinkerConfig;
@@ -29,7 +28,7 @@ import org.joml.Matrix4f;
  * sits at your feet and follows you up and down — the buried "recommended Y" is useless in the
  * dense Nether). In the source dimension it outlines the portal you selected.
  *
- * <p><b>Rendering note:</b> Minecraft's immediate {@code VertexConsumerProvider} backs both the
+ * <p><b>Rendering note:</b> Minecraft's immediate {@code MultiBufferSource} backs both the
  * translucent-quad layer and the line layer with the same fallback buffer, so the two must never
  * be written interleaved. We render in two clean passes — every fill first, then every line.
  */
@@ -38,10 +37,10 @@ public class PortalLinkRenderer {
     private static long lastRenderError = 0;
 
     public static void register() {
-        WorldRenderEvents.END_MAIN.register(PortalLinkRenderer::render);
+        LevelRenderEvents.END_MAIN.register(PortalLinkRenderer::render);
     }
 
-    private static void render(WorldRenderContext context) {
+    private static void render(LevelRenderContext context) {
         try {
             renderInternal(context);
         } catch (Exception e) {
@@ -53,48 +52,48 @@ public class PortalLinkRenderer {
         }
     }
 
-    private static void renderInternal(WorldRenderContext context) {
+    private static void renderInternal(LevelRenderContext context) {
         if (!EasyPortalLinker.enabled) return;
         PortalTarget sel = EasyPortalLinker.selection;
         if (sel == null || sel.axis == null || sel.sourceDim == null) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
-        ClientWorld world = client.world;
-        String dim = world.getRegistryKey().getValue().toString();
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
+        ClientLevel world = client.level;
+        String dim = world.dimension().identifier().toString();
         EasyPortalLinkerConfig cfg = ConfigManager.get();
 
         boolean inDest = sel.isDestDim(dim);
         boolean inSource = sel.isSourceDim(dim) && cfg.showSourceHighlight;
         if (!inDest && !inSource) return;
 
-        Camera camera = client.gameRenderer.getCamera();
-        Vec3d cam = camera.getCameraPos();
-        MatrixStack matrices = context.matrices();
-        VertexConsumerProvider consumers = context.consumers();
+        Camera camera = client.gameRenderer.getMainCamera();
+        Vec3 cam = camera.position();
+        PoseStack matrices = context.poseStack();
+        MultiBufferSource consumers = context.bufferSource();
         if (consumers == null) return;
 
         double playerY = client.player.getY();
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cam.x, -cam.y, -cam.z);
-        Matrix4f mat = matrices.peek().getPositionMatrix();
+        Matrix4f mat = matrices.last().pose();
 
         // ── Pass 1: all translucent fills ───────────────────────────────────────
-        VertexConsumer q = consumers.getBuffer(RenderLayers.debugQuads());
+        VertexConsumer q = consumers.getBuffer(RenderTypes.debugQuads());
         if (inDest) fillTarget(cfg, world, sel, playerY, q, mat);
         else fillSource(cfg, sel, q, mat);
 
         // ── Pass 2: all lines (fetch the line buffer only after every fill) ──────
-        VertexConsumer l = consumers.getBuffer(RenderLayers.LINES);
+        VertexConsumer l = consumers.getBuffer(RenderTypes.LINES);
         if (inDest) lineTarget(cfg, world, sel, playerY, l, mat);
         else lineSource(cfg, sel, l, mat);
 
-        matrices.pop();
+        matrices.popPose();
 
-        if (consumers instanceof VertexConsumerProvider.Immediate imm) {
-            imm.draw(RenderLayers.debugQuads());
-            imm.draw(RenderLayers.LINES);
+        if (consumers instanceof MultiBufferSource.BufferSource imm) {
+            imm.endBatch(RenderTypes.debugQuads());
+            imm.endBatch(RenderTypes.LINES);
         }
 
         // ── Floating coordinate labels (own matrix pushes, SEE_THROUGH layer) ───
@@ -106,7 +105,7 @@ public class PortalLinkRenderer {
 
     // ── Destination fills / lines ──────────────────────────────────────────────
 
-    private static void fillTarget(EasyPortalLinkerConfig cfg, ClientWorld world, PortalTarget sel,
+    private static void fillTarget(EasyPortalLinkerConfig cfg, ClientLevel world, PortalTarget sel,
                                    double playerY, VertexConsumer q, Matrix4f mat) {
         Direction.Axis axis = sel.axisEnum();
         int width = Math.max(2, sel.width);
@@ -121,7 +120,7 @@ public class PortalLinkRenderer {
         if (cfg.showColumn) {
             float[] fp = columnFootprint(axis, ax, az, width);
             addColumnWalls(q, mat, fp[0], fp[1], fp[2], fp[3],
-                world.getBottomY(), world.getTopYInclusive() + 1, tc, ta);
+                world.getMinY(), world.getMaxY() + 1, tc, ta);
         }
         if (cfg.showGhostFrame) {
             for (int i = 0; i < width; i++)
@@ -138,7 +137,7 @@ public class PortalLinkRenderer {
         }
     }
 
-    private static void lineTarget(EasyPortalLinkerConfig cfg, ClientWorld world, PortalTarget sel,
+    private static void lineTarget(EasyPortalLinkerConfig cfg, ClientLevel world, PortalTarget sel,
                                    double playerY, VertexConsumer l, Matrix4f mat) {
         Direction.Axis axis = sel.axisEnum();
         int width = Math.max(2, sel.width);
@@ -152,7 +151,7 @@ public class PortalLinkRenderer {
         if (cfg.showColumn && cfg.drawEdgeLines) {
             float[] fp = columnFootprint(axis, ax, az, width);
             float x0 = fp[0], x1 = fp[1], z0 = fp[2], z1 = fp[3];
-            float y0 = world.getBottomY(), y1 = world.getTopYInclusive() + 1;
+            float y0 = world.getMinY(), y1 = world.getMaxY() + 1;
             addLine(l, mat, x0, y0, z0, x0, y1, z0, tc);
             addLine(l, mat, x1, y0, z0, x1, y1, z0, tc);
             addLine(l, mat, x0, y0, z1, x0, y1, z1, tc);
@@ -202,9 +201,9 @@ public class PortalLinkRenderer {
 
     // ── Floating labels ────────────────────────────────────────────────────────
 
-    private static void drawTargetLabel(EasyPortalLinkerConfig cfg, MinecraftClient client, MatrixStack matrices,
-                                        VertexConsumerProvider consumers, Camera camera, Vec3d cam,
-                                        ClientWorld world, PortalTarget sel, double playerY) {
+    private static void drawTargetLabel(EasyPortalLinkerConfig cfg, Minecraft client, PoseStack matrices,
+                                        MultiBufferSource consumers, Camera camera, Vec3 cam,
+                                        ClientLevel world, PortalTarget sel, double playerY) {
         Direction.Axis axis = sel.axisEnum();
         int width = Math.max(2, sel.width);
         int height = Math.max(3, sel.height);
@@ -227,8 +226,8 @@ public class PortalLinkRenderer {
         drawBillboard(client, matrices, consumers, camera, cam, cx, ly, cz, lines, 0xFFFFFFFF);
     }
 
-    private static void drawSourceLabel(MinecraftClient client, MatrixStack matrices,
-                                        VertexConsumerProvider consumers, Camera camera, Vec3d cam,
+    private static void drawSourceLabel(Minecraft client, PoseStack matrices,
+                                        MultiBufferSource consumers, Camera camera, Vec3 cam,
                                         PortalTarget sel) {
         Direction.Axis axis = sel.axisEnum();
         int width = Math.max(2, sel.width);
@@ -250,25 +249,25 @@ public class PortalLinkRenderer {
             new String[]{ "Selected portal", second }, 0xFFFFFFFF);
     }
 
-    private static void drawBillboard(MinecraftClient client, MatrixStack matrices,
-                                      VertexConsumerProvider consumers, Camera camera, Vec3d cam,
+    private static void drawBillboard(Minecraft client, PoseStack matrices,
+                                      MultiBufferSource consumers, Camera camera, Vec3 cam,
                                       double wx, double wy, double wz, String[] lines, int color) {
-        TextRenderer tr = client.textRenderer;
-        matrices.push();
+        Font tr = client.font;
+        matrices.pushPose();
         matrices.translate(wx - cam.x, wy - cam.y, wz - cam.z);
-        matrices.multiply(camera.getRotation());
+        matrices.mulPose(camera.rotation());
         matrices.scale(0.025f, -0.025f, 0.025f);
-        Matrix4f m = matrices.peek().getPositionMatrix();
+        Matrix4f m = matrices.last().pose();
 
         int lineH = 10;
         for (int k = 0; k < lines.length; k++) {
             String line = lines[k];
-            int tw = tr.getWidth(line);
-            tr.draw(line, -tw / 2f, k * lineH, color, false, m, consumers,
-                TextRenderer.TextLayerType.SEE_THROUGH, 0x90000000,
-                LightmapTextureManager.MAX_LIGHT_COORDINATE);
+            int tw = tr.width(line);
+            tr.drawInBatch(line, -tw / 2f, k * lineH, color, false, m, consumers,
+                Font.DisplayMode.SEE_THROUGH, 0x90000000,
+                0xF000F0);
         }
-        matrices.pop();
+        matrices.popPose();
     }
 
     // ── Geometry helpers ──────────────────────────────────────────────────────
@@ -277,10 +276,10 @@ public class PortalLinkRenderer {
      * Ghost-frame interior-bottom Y: the locked value when {@link EasyPortalLinkerConfig#lockTargetY}
      * is on, otherwise the player's feet. Always clamped to the destination world's build range.
      */
-    private static int frameBaseY(EasyPortalLinkerConfig cfg, ClientWorld world, double playerY, int height) {
-        int ry = cfg.lockTargetY ? cfg.lockedTargetY : MathHelper.floor(playerY);
-        int lo = world.getBottomY() + 2;
-        int hi = world.getTopYInclusive() - height;
+    private static int frameBaseY(EasyPortalLinkerConfig cfg, ClientLevel world, double playerY, int height) {
+        int ry = cfg.lockTargetY ? cfg.lockedTargetY : Mth.floor(playerY);
+        int lo = world.getMinY() + 2;
+        int hi = world.getMaxY() - height;
         if (hi < lo) hi = lo;
         return Math.max(lo, Math.min(hi, ry));
     }
@@ -323,28 +322,28 @@ public class PortalLinkRenderer {
     private static void addWallAlongX(VertexConsumer vc, Matrix4f mat,
                                       float x1, float x2, float z, float y0, float y1,
                                       float[] c, float a) {
-        vc.vertex(mat, x1, y0, z).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x2, y0, z).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x2, y1, z).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x1, y1, z).color(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x1, y0, z).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x2, y0, z).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x2, y1, z).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x1, y1, z).setColor(c[0], c[1], c[2], a);
     }
 
     private static void addWallAlongZ(VertexConsumer vc, Matrix4f mat,
                                       float z1, float z2, float x, float y0, float y1,
                                       float[] c, float a) {
-        vc.vertex(mat, x, y0, z1).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x, y0, z2).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x, y1, z2).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x, y1, z1).color(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x, y0, z1).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x, y0, z2).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x, y1, z2).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x, y1, z1).setColor(c[0], c[1], c[2], a);
     }
 
     private static void addQuadY(VertexConsumer vc, Matrix4f mat,
                                  float x0, float x1, float z0, float z1, float y,
                                  float[] c, float a) {
-        vc.vertex(mat, x0, y, z0).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x1, y, z0).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x1, y, z1).color(c[0], c[1], c[2], a);
-        vc.vertex(mat, x0, y, z1).color(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x0, y, z0).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x1, y, z0).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x1, y, z1).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(mat, x0, y, z1).setColor(c[0], c[1], c[2], a);
     }
 
     private static void addRectXZ(VertexConsumer l, Matrix4f mat,
@@ -378,8 +377,8 @@ public class PortalLinkRenderer {
         float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
         float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (len > 0) { dx /= len; dy /= len; dz /= len; }
-        vc.vertex(mat, x1, y1, z1).color(c[0], c[1], c[2], 1f).normal(dx, dy, dz).lineWidth(2.5f);
-        vc.vertex(mat, x2, y2, z2).color(c[0], c[1], c[2], 1f).normal(dx, dy, dz).lineWidth(2.5f);
+        vc.addVertex(mat, x1, y1, z1).setColor(c[0], c[1], c[2], 1f).setNormal(dx, dy, dz).setLineWidth(2.5f);
+        vc.addVertex(mat, x2, y2, z2).setColor(c[0], c[1], c[2], 1f).setNormal(dx, dy, dz).setLineWidth(2.5f);
     }
 
     private static float[] rgb(int c) {

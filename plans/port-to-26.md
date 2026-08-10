@@ -69,7 +69,11 @@ Also required:
   not define the `mod*` configurations, because nothing is remapped.
 - **`"minecraft": ">=26.1 <26.2"`** in every `fabric.mod.json`.
 
-**`include` (jar-in-jar) still works**, so the TrarnCore bundling architecture survives intact.
+**`include` (jar-in-jar) still works**, so the TrarnCore bundling architecture survives intact —
+verified: RSwitch's jar contains `META-INF/jars/trarncore-1.1.0.jar`.
+
+- **There is no `remapJar` task.** Nothing is remapped, so `jar` is the final artifact. Any build
+  logic referencing `remapJar` (our `exportJar`) must point at `jar` instead.
 
 ## Spike result: TrarnCore is ported and building
 

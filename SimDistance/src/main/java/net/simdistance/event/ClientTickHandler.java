@@ -17,7 +17,7 @@ public class ClientTickHandler {
     }
 
     private static void handleKeybinds() {
-        while (SimDistance.TOGGLE_BORDER != null && SimDistance.TOGGLE_BORDER.wasPressed()) {
+        while (SimDistance.TOGGLE_BORDER != null && SimDistance.TOGGLE_BORDER.consumeClick()) {
             SimDistance.enabled = !SimDistance.enabled;
             ConfigManager.get().enabled = SimDistance.enabled;
             ConfigManager.save();

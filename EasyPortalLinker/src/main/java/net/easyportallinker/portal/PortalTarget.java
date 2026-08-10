@@ -1,6 +1,6 @@
 package net.easyportallinker.portal;
 
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
 
 /**
  * A recorded portal selection and its computed counterpart in the other dimension.

@@ -1,6 +1,6 @@
 package net.rswitch.integration;
 
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 import net.rswitch.config.RSwitchConfigScreen;
 import net.trarncore.integration.ClothModMenuIntegration;
 

@@ -1,7 +1,7 @@
 package net.simdistance.integration;
 
 import net.simdistance.config.SimDistanceConfigScreen;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 import net.trarncore.integration.ClothModMenuIntegration;
 
 /**

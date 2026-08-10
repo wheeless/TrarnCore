@@ -89,7 +89,7 @@ jar {
 def modBuildsDir = rootProject.file("../ModBuilds")
 
 tasks.register('exportJar') {
-    dependsOn tasks.named('remapJar')
+    dependsOn tasks.named('jar')
     doLast {
         modBuildsDir.mkdirs()
         def base = project.archives_base_name
@@ -99,7 +99,7 @@ tasks.register('exportJar') {
             }
         }
         copy {
-            from tasks.named('remapJar').get().archiveFile
+            from tasks.named('jar').get().archiveFile
             into modBuildsDir
         }
         logger.lifecycle("exported ${base} -> ${modBuildsDir}")
