@@ -3,7 +3,7 @@ name: Release
 # Monorepo, so a bare "v1.2.3" tag would be ambiguous. Two tag shapes are supported:
 #
 #   containerutil-v0.1.0   release ONE project, built at the version in the tag
-#   claimviz-v0.0.6            (the tag version overrides gradle.properties, so tagging is
+#   claimviz-v0.2.0            (the tag version overrides gradle.properties, so tagging is
 #   trarncore-v0.1.0            the single action that cuts a release)
 #
 #   all-v0.3.0             release EVERY mod in one go, each built at its own configured
