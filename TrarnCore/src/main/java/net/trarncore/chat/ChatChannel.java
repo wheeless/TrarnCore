@@ -1,17 +1,17 @@
 package net.trarncore.chat;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Prefixed, local-only chat feedback for one mod.
  *
- * <p>Everything here goes through {@link net.minecraft.client.gui.hud.ChatHud#addMessage(Text)},
+ * <p>Everything here goes through
+ * {@link net.minecraft.client.gui.components.ChatComponent#addClientSystemMessage(Component)},
  * which appends straight to the client's own chat log. No packet is sent, so nothing reaches the
- * server or other players — this is not the same as sending a chat message. ({@code ChatHud}
- * contains no networking code at all; sending chat goes through
- * {@code ClientPlayNetworkHandler.sendChatMessage}, which nothing here calls.)
+ * server or other players — this is not the same as sending a chat message. The method name says
+ * as much: it is the client's own system message channel.
  *
  * <p>Chat rather than the action bar deliberately. The action bar is a single slot that servers,
  * scoreboards and other mods all write to, so anything put there is liable to be overwritten a
@@ -20,15 +20,15 @@ import net.minecraft.util.Formatting;
  *
  * <p>Create one per mod and keep it in a static field:
  * <pre>{@code
- * public static final ChatChannel CHAT = ChatChannel.of("ContainerUtil", Formatting.DARK_AQUA);
+ * public static final ChatChannel CHAT = ChatChannel.of("ContainerUtil", ChatFormatting.DARK_AQUA);
  * }</pre>
  */
 public final class ChatChannel {
 
     private final String prefix;
-    private final Formatting prefixColor;
+    private final ChatFormatting prefixColor;
 
-    private ChatChannel(String modName, Formatting prefixColor) {
+    private ChatChannel(String modName, ChatFormatting prefixColor) {
         this.prefix = "[" + modName + "] ";
         this.prefixColor = prefixColor;
     }
@@ -38,13 +38,13 @@ public final class ChatChannel {
      * @param prefixColor give each mod its own so prefixes stay distinguishable when several
      *                    are installed together
      */
-    public static ChatChannel of(String modName, Formatting prefixColor) {
+    public static ChatChannel of(String modName, ChatFormatting prefixColor) {
         return new ChatChannel(modName, prefixColor);
     }
 
     /** Appends a prefixed line to the local chat log. */
-    public void send(Text message) {
-        raw(Text.literal(prefix).formatted(prefixColor).append(message));
+    public void send(Component message) {
+        raw(Component.literal(prefix).withStyle(prefixColor).append(message));
     }
 
     /**
@@ -52,12 +52,12 @@ public final class ChatChannel {
      * since the text renderer processes them regardless of the style set here.
      */
     public void send(String message) {
-        send(Text.literal(message).formatted(Formatting.WHITE));
+        send(Component.literal(message).withStyle(ChatFormatting.WHITE));
     }
 
     /** Appends a prefixed line in a specific colour. */
-    public void send(String message, Formatting color) {
-        send(Text.literal(message).formatted(color));
+    public void send(String message, ChatFormatting color) {
+        send(Component.literal(message).withStyle(color));
     }
 
     /**
@@ -67,18 +67,18 @@ public final class ChatChannel {
      * deliberately have none.
      */
     public void sendRaw(String message) {
-        raw(Text.literal(message));
+        raw(Component.literal(message));
     }
 
     /** Appends a line exactly as given, with no prefix. */
-    public void sendRaw(Text message) {
+    public void sendRaw(Component message) {
         raw(message);
     }
 
-    private static void raw(Text message) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void raw(Component message) {
+        Minecraft client = Minecraft.getInstance();
         // Safe to call before the HUD exists — during early init, or after a disconnect.
-        if (client == null || client.inGameHud == null) return;
-        client.inGameHud.getChatHud().addMessage(message);
+        if (client == null || client.gui == null) return;
+        client.gui.getChat().addClientSystemMessage(message);
     }
 }

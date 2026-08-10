@@ -3,9 +3,9 @@ package net.trarncore.update;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.trarncore.TrarnCore;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.config.ConfigManager;
@@ -142,13 +142,13 @@ public final class UpdateChecker {
             if (latest.equals(alreadyTold.get(watched.modId()))) continue;
 
             watched.chat().send(
-                Text.literal("Update available: ").formatted(Formatting.WHITE)
-                    .append(Text.literal(watched.installed() + " → " + latest)
-                        .formatted(Formatting.YELLOW))
-                    .append(Text.literal("  [open release]")
-                        .styled(style -> style
-                            .withColor(Formatting.AQUA)
-                            .withUnderline(true)
+                Component.literal("Update available: ").withStyle(ChatFormatting.WHITE)
+                    .append(Component.literal(watched.installed() + " → " + latest)
+                        .withStyle(ChatFormatting.YELLOW))
+                    .append(Component.literal("  [open release]")
+                        .withStyle(style -> style
+                            .withColor(ChatFormatting.AQUA)
+                            .withUnderlined(true)
                             .withClickEvent(new ClickEvent.OpenUrl(URI.create(available.releaseUrl()))))));
 
             alreadyTold.put(watched.modId(), latest);

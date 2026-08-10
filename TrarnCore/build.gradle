@@ -1,5 +1,7 @@
 plugins {
-    id 'fabric-loom' version '1.17-SNAPSHOT'
+    // Minecraft 26.x is unobfuscated, so nothing is remapped — hence the no-remap Loom
+    // variant. The fully-qualified plugin id is required; the short form does not resolve.
+    id 'net.fabricmc.fabric-loom-no-remap' version '1.14.0-alpha.31'
     id 'maven-publish'
 }
 
@@ -24,6 +26,10 @@ base {
 
 loom {
     accessWidenerPath = file("src/main/resources/trarncore.accesswidener")
+    // No intermediary exists for 26.x — the jar already carries its real names.
+    noIntermediateMappings()
+    // Fabric API ships transitive access wideners that do not apply against the unobfuscated jar.
+    enableTransitiveAccessWideners = false
 }
 
 repositories {
@@ -35,13 +41,12 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${pin('minecraft_version')}"
-    mappings "net.fabricmc:yarn:${pin('yarn_mappings')}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${pin('loader_version')}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${pin('fabric_version')}"
+    implementation "net.fabricmc:fabric-loader:${pin('loader_version')}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${pin('fabric_version')}"
 
     // Soft dependencies — compiled against, never bundled or required at runtime.
-    modCompileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
-    modCompileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
+    compileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
+    compileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
 }
 
 processResources {
@@ -53,12 +58,12 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 21
+    it.options.release = 25
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
     withSourcesJar()
 }
