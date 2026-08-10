@@ -8,8 +8,9 @@ name: Release
 #
 #   all-v0.3.0             release EVERY mod in one go, each built at its own configured
 #                          version. The version in the tag is only the release label — it is
-#                          deliberately not forced onto the mods, because their versions
-#                          legitimately differ (ClaimViz is on 0.1.x while the rest are 0.2.x).
+#                          deliberately not forced onto the mods. They were levelled to 0.2.0
+#                          at the 26.1.2 port purely as a baseline, and are expected to drift
+#                          apart again as individual mods change.
 on:
   push:
     tags:

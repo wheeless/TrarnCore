@@ -105,8 +105,9 @@ git push origin all-v0.3.0
 
 Builds all six mods and publishes **one** GitHub Release with all six jars attached. Each mod is
 built at its own configured version — the version in the tag is only the release label. That is
-deliberate: mod versions legitimately differ (ClaimViz is on `0.1.x` while the rest are on `0.2.x`),
-and forcing them all to one number would misreport what you actually shipped.
+deliberate: forcing every mod to the tag's number would claim a change in mods that did not
+change. All six were levelled to `0.2.0` at the 26.1.2 port as a common baseline, and are meant
+to drift apart from there as individual mods actually change.
 
 The release notes lead with the Minecraft version from `versions.properties`, because the jar
 filenames carry only the mod version and these jars are useless on the wrong Minecraft.
