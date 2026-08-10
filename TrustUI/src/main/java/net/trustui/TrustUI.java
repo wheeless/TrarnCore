@@ -3,8 +3,8 @@ package net.trustui;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.input.Keys;
 import net.trarncore.update.UpdateChecker;
@@ -21,9 +21,9 @@ public class TrustUI implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Blue — one colour per sibling mod so prefixes stay distinguishable in a shared chat log. */
-    public static final ChatChannel CHAT = ChatChannel.of("TrustUI", Formatting.BLUE);
+    public static final ChatChannel CHAT = ChatChannel.of("TrustUI", ChatFormatting.BLUE);
 
-    public static KeyBinding OPEN_MENU;
+    public static KeyMapping OPEN_MENU;
 
     @Override
     public void onInitializeClient() {
@@ -31,7 +31,7 @@ public class TrustUI implements ClientModInitializer {
 
         // Unbound by default: this opens a full screen, and any default would collide with
         // something on most setups.
-        OPEN_MENU = Keys.register("key.trustui.open", Keys.UNBOUND, KeyBinding.Category.MISC);
+        OPEN_MENU = Keys.register("key.trustui.open", Keys.UNBOUND, KeyMapping.Category.MISC);
 
         TrustListReader.register();
 
@@ -39,7 +39,7 @@ public class TrustUI implements ClientModInitializer {
             Guarded.run(LOGGER, "TrustUI tick", () -> {
                 TrustListReader.tick();
                 Keys.whenPressed(OPEN_MENU, () -> {
-                    if (client.getNetworkHandler() == null) {
+                    if (client.getConnection() == null) {
                         CHAT.send("Not connected to a server.");
                         return;
                     }

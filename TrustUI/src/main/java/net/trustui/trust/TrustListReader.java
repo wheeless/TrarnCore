@@ -1,7 +1,7 @@
 package net.trustui.trust;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 import net.trustui.TrustUI;
 import net.trustui.config.ConfigManager;
 
@@ -43,7 +43,7 @@ public final class TrustListReader {
         ClientReceiveMessageEvents.ALLOW_GAME.register(TrustListReader::onGameMessage);
     }
 
-    private static boolean onGameMessage(Text message, boolean overlay) {
+    private static boolean onGameMessage(Component message, boolean overlay) {
         // Overlay messages are the action bar, never chat output from a command.
         if (!capturing || overlay) return true;
 

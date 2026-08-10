@@ -5,13 +5,13 @@ import net.containerutil.data.ContainerRecord;
 import net.containerutil.data.IndexManager;
 import net.containerutil.data.WorldIdentity;
 import net.containerutil.scan.ContainerScanner;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 
 /**
  * Resolves which indexed container you are currently looking at.
@@ -26,23 +26,23 @@ public final class ContainerPeek {
     }
 
     /** The indexed container under the crosshair within {@code maxDistance} blocks, or {@code null}. */
-    public static ContainerRecord lookedAt(MinecraftClient client, int maxDistance) {
-        if (client.player == null || client.world == null) return null;
+    public static ContainerRecord lookedAt(Minecraft client, int maxDistance) {
+        if (client.player == null || client.level == null) return null;
         if (!IndexManager.isActive()) return null;
 
         String dim = WorldIdentity.currentDimension();
         if (dim == null) return null;
 
-        Vec3d start = ViewAnchor.eyePos(client);
-        Vec3d end = start.add(ViewAnchor.lookVec(client).multiply(maxDistance));
+        Vec3 start = ViewAnchor.eyePos(client);
+        Vec3 end = start.add(ViewAnchor.lookVec(client).scale(maxDistance));
 
-        BlockHitResult hit = client.world.raycast(new RaycastContext(
-            start, end, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, client.player));
+        BlockHitResult hit = client.level.clip(new ClipContext(
+            start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, client.player));
 
         if (hit == null || hit.getType() != HitResult.Type.BLOCK) return null;
 
         BlockPos pos = hit.getBlockPos();
-        BlockState state = client.world.getBlockState(pos);
+        BlockState state = client.level.getBlockState(pos);
         ContainerKind kind = ContainerKind.fromBlockState(state);
         if (kind == null) return null;
 

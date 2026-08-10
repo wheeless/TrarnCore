@@ -5,12 +5,14 @@ import net.containerutil.container.ContainerKind;
 import net.containerutil.data.ContainerIndex;
 import net.containerutil.data.ContainerRecord;
 import net.containerutil.data.ItemEntry;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
+import net.minecraft.tags.TagKey;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -225,7 +227,7 @@ public final class SearchQuery {
     private static Predicate<ItemEntry> tagPredicate(String rawTag) {
         Identifier tagId = Identifier.tryParse(rawTag.contains(":") ? rawTag : "minecraft:" + rawTag);
         if (tagId == null) return entry -> false;
-        TagKey<Item> tag = TagKey.of(RegistryKeys.ITEM, tagId);
+        TagKey<Item> tag = TagKey.create(Registries.ITEM, tagId);
         Map<String, Boolean> cache = new HashMap<>();
 
         return entry -> {
@@ -233,8 +235,8 @@ public final class SearchQuery {
             return cache.computeIfAbsent(entry.id, id -> {
                 Identifier itemId = Identifier.tryParse(id);
                 if (itemId == null) return false;
-                return Registries.ITEM.getEntry(itemId)
-                    .map((RegistryEntry.Reference<Item> ref) -> ref.isIn(tag))
+                return BuiltInRegistries.ITEM.get(itemId)
+                    .map(ref -> ref.is(tag))
                     .orElse(false);
             });
         };

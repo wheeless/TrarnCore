@@ -1,7 +1,7 @@
 package net.containerutil.data;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ServerInfo;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 
 /**
  * Works out which index file the world you are in belongs to.
@@ -19,21 +19,21 @@ public final class WorldIdentity {
 
     /** Returns a filesystem-safe key for the current world, or {@code null} if not in one. */
     public static String current() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
 
-        if (client.isIntegratedServerRunning() && client.getServer() != null) {
-            String levelName = client.getServer().getSaveProperties().getLevelName();
+        if (client.hasSingleplayerServer() && client.getSingleplayerServer() != null) {
+            String levelName = client.getSingleplayerServer().getWorldData().getLevelName();
             return "sp_" + sanitize(levelName);
         }
 
-        ServerInfo entry = client.getCurrentServerEntry();
-        if (entry != null && entry.address != null && !entry.address.isBlank()) {
-            return "mp_" + sanitize(entry.address);
+        ServerData entry = client.getCurrentServer();
+        if (entry != null && entry.ip != null && !entry.ip.isBlank()) {
+            return "mp_" + sanitize(entry.ip);
         }
 
         // Connected to something we cannot name (a direct-connect that has not populated the
         // server entry yet, for instance). Better one shared bucket than silently dropping data.
-        if (client.getNetworkHandler() != null) {
+        if (client.getConnection() != null) {
             return "mp_unknown";
         }
 
@@ -42,9 +42,9 @@ public final class WorldIdentity {
 
     /** Registry id of the dimension the player is currently in, e.g. {@code minecraft:overworld}. */
     public static String currentDimension() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null) return null;
-        return client.world.getRegistryKey().getValue().toString();
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null) return null;
+        return client.level.dimension().identifier().toString();
     }
 
     /**

@@ -7,8 +7,8 @@ import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.containerutil.ContainerUtil;
 import net.containerutil.container.ContainerFamily;
 import net.containerutil.container.ContainerKind;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Cloth Config screen for ContainerUtil.
@@ -22,7 +22,7 @@ public class ContainerUtilConfigScreen {
 
         ConfigBuilder builder = ConfigBuilder.create()
             .setParentScreen(parent)
-            .setTitle(Text.literal("ContainerUtil Settings"))
+            .setTitle(Component.literal("ContainerUtil Settings"))
             .setSavingRunnable(() -> {
                 ConfigManager.save();
                 // Keep the render loop's in-memory flag in sync with the saved value.
@@ -43,129 +43,129 @@ public class ContainerUtilConfigScreen {
     // ── General ──────────────────────────────────────────────────────────────
 
     private static void buildGeneral(ConfigBuilder builder, ConfigEntryBuilder entry, ContainerUtilConfig config) {
-        ConfigCategory general = builder.getOrCreateCategory(Text.literal("General"));
+        ConfigCategory general = builder.getOrCreateCategory(Component.literal("General"));
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Enabled"), config.enabled)
+            .startBooleanToggle(Component.literal("Enabled"), config.enabled)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Master on/off for container highlights. Also bound to the toggle hotkey (default: Numpad 3)."))
+            .setTooltip(Component.literal("Master on/off for container highlights. Also bound to the toggle hotkey (default: Numpad 3)."))
             .setSaveConsumer(value -> config.enabled = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Render Distance (chunks)"), config.renderChunkRadius, 1, 32)
+            .startIntSlider(Component.literal("Render Distance (chunks)"), config.renderChunkRadius, 1, 32)
             .setDefaultValue(8)
-            .setTooltip(Text.literal("Containers within this many chunks of you are highlighted, measured "
+            .setTooltip(Component.literal("Containers within this many chunks of you are highlighted, measured "
                 + "horizontally. Depth is not limited — a chunk loads as a full column, so a chest at "
                 + "bedrock is highlighted just like one at your feet."))
             .setSaveConsumer(value -> config.renderChunkRadius = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Anchor To Camera"), config.anchorToCamera)
+            .startBooleanToggle(Component.literal("Anchor To Camera"), config.anchorToCamera)
             .setDefaultValue(false)
             .setTooltip(
-                Text.literal("Measure distances from the camera instead of your body."),
-                Text.literal("Turn this on when using a freecam: highlights, labels and the peek panel "
+                Component.literal("Measure distances from the camera instead of your body."),
+                Component.literal("Turn this on when using a freecam: highlights, labels and the peek panel "
                     + "then follow where you are viewing from, rather than staying clustered around "
                     + "the body you left behind."),
-                Text.literal("Tracking arrival still uses your real position — you have not reached a "
+                Component.literal("Tracking arrival still uses your real position — you have not reached a "
                     + "chest just because your camera flew to it."))
             .setSaveConsumer(value -> config.anchorToCamera = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Vertical Limit (blocks)"), config.verticalRenderLimit, 0, 512)
+            .startIntSlider(Component.literal("Vertical Limit (blocks)"), config.verticalRenderLimit, 0, 512)
             .setDefaultValue(0)
-            .setTextGetter(value -> Text.literal(value == 0 ? "No limit" : value + " blocks"))
-            .setTooltip(Text.literal("Optionally hide highlights more than this far above or below you. "
+            .setTextGetter(value -> Component.literal(value == 0 ? "No limit" : value + " blocks"))
+            .setTooltip(Component.literal("Optionally hide highlights more than this far above or below you. "
                 + "0 means no limit, which matches the full height of a loaded chunk."))
             .setSaveConsumer(value -> config.verticalRenderLimit = value)
             .build());
 
         general.addEntry(entry
-            .startIntField(Text.literal("Max Highlights On Screen"), config.maxRenderedContainers)
+            .startIntField(Component.literal("Max Highlights On Screen"), config.maxRenderedContainers)
             .setDefaultValue(512)
             .setMin(16).setMax(8192)
-            .setTooltip(Text.literal("Hard cap, nearest first. Lower this if a large storage hall costs you frames."))
+            .setTooltip(Component.literal("Hard cap, nearest first. Lower this if a large storage hall costs you frames."))
             .setSaveConsumer(value -> config.maxRenderedContainers = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Draw Filled Boxes"), config.drawFilled)
+            .startBooleanToggle(Component.literal("Draw Filled Boxes"), config.drawFilled)
             .setDefaultValue(true)
             .setSaveConsumer(value -> config.drawFilled = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Draw Outlines"), config.drawOutline)
+            .startBooleanToggle(Component.literal("Draw Outlines"), config.drawOutline)
             .setDefaultValue(true)
             .setSaveConsumer(value -> config.drawOutline = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("See Through Walls"), config.seeThrough)
+            .startBooleanToggle(Component.literal("See Through Walls"), config.seeThrough)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Draw highlights through terrain. Turn off to hide them behind blocks like normal geometry."))
+            .setTooltip(Component.literal("Draw highlights through terrain. Turn off to hide them behind blocks like normal geometry."))
             .setSaveConsumer(value -> config.seeThrough = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Outline Width"), (int) (config.outlineWidth * 10), 5, 80)
+            .startIntSlider(Component.literal("Outline Width"), (int) (config.outlineWidth * 10), 5, 80)
             .setDefaultValue(20)
-            .setTextGetter(value -> Text.literal(String.format("%.1f", value / 10f)))
-            .setTooltip(Text.literal("Thickness of the box outlines."))
+            .setTextGetter(value -> Component.literal(String.format("%.1f", value / 10f)))
+            .setTooltip(Component.literal("Thickness of the box outlines."))
             .setSaveConsumer(value -> config.outlineWidth = value / 10f)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Fill Opacity Follows Fullness"), config.fillScalesWithFullness)
+            .startBooleanToggle(Component.literal("Fill Opacity Follows Fullness"), config.fillScalesWithFullness)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Fuller containers render more opaque, so an empty chest is visibly faint. Requires having opened the container at least once."))
+            .setTooltip(Component.literal("Fuller containers render more opaque, so an empty chest is visibly faint. Requires having opened the container at least once."))
             .setSaveConsumer(value -> config.fillScalesWithFullness = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Fill Opacity — Empty (%)"), config.minFillOpacity, 0, 100)
+            .startIntSlider(Component.literal("Fill Opacity — Empty (%)"), config.minFillOpacity, 0, 100)
             .setDefaultValue(6)
             .setSaveConsumer(value -> config.minFillOpacity = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Fill Opacity — Full (%)"), config.maxFillOpacity, 0, 100)
+            .startIntSlider(Component.literal("Fill Opacity — Full (%)"), config.maxFillOpacity, 0, 100)
             .setDefaultValue(45)
             .setSaveConsumer(value -> config.maxFillOpacity = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Fill Opacity — Unopened (%)"), config.baseFillOpacity, 0, 100)
+            .startIntSlider(Component.literal("Fill Opacity — Unopened (%)"), config.baseFillOpacity, 0, 100)
             .setDefaultValue(18)
-            .setTooltip(Text.literal("Used for containers you have never looked inside, where there is no fullness to show."))
+            .setTooltip(Component.literal("Used for containers you have never looked inside, where there is no fullness to show."))
             .setSaveConsumer(value -> config.baseFillOpacity = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Show Labels"), config.showLabels)
+            .startBooleanToggle(Component.literal("Show Labels"), config.showLabels)
             .setDefaultValue(true)
             .setSaveConsumer(value -> config.showLabels = value)
             .build());
 
         general.addEntry(entry
-            .startIntSlider(Text.literal("Label Distance (blocks)"), config.labelMaxDistance, 4, 256)
+            .startIntSlider(Component.literal("Label Distance (blocks)"), config.labelMaxDistance, 4, 256)
             .setDefaultValue(48)
             .setSaveConsumer(value -> config.labelMaxDistance = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Show Slot Counts On Labels"), config.showFillCounts)
+            .startBooleanToggle(Component.literal("Show Slot Counts On Labels"), config.showFillCounts)
             .setDefaultValue(true)
             .setSaveConsumer(value -> config.showFillCounts = value)
             .build());
 
         general.addEntry(entry
-            .startBooleanToggle(Text.literal("Show Contents Age On Labels"), config.showLastSeenAge)
+            .startBooleanToggle(Component.literal("Show Contents Age On Labels"), config.showLastSeenAge)
             .setDefaultValue(false)
-            .setTooltip(Text.literal("Always show how long ago contents were recorded. Stale containers show it regardless."))
+            .setTooltip(Component.literal("Always show how long ago contents were recorded. Stale containers show it regardless."))
             .setSaveConsumer(value -> config.showLastSeenAge = value)
             .build());
     }
@@ -178,25 +178,25 @@ public class ContainerUtilConfigScreen {
      * actually think about them.
      */
     private static void buildColors(ConfigBuilder builder, ConfigEntryBuilder entry, ContainerUtilConfig config) {
-        ConfigCategory colors = builder.getOrCreateCategory(Text.literal("Colours"));
+        ConfigCategory colors = builder.getOrCreateCategory(Component.literal("Colours"));
 
         for (ContainerFamily family : ContainerFamily.values()) {
-            SubCategoryBuilder group = entry.startSubCategory(Text.literal(family.displayName()))
+            SubCategoryBuilder group = entry.startSubCategory(Component.literal(family.displayName()))
                 .setExpanded(family == ContainerFamily.STORAGE);
 
             for (ContainerKind kind : ContainerKind.values()) {
                 if (kind.family() != family) continue;
 
                 group.add(entry
-                    .startColorField(Text.literal(kind.displayName()), config.colorOf(kind))
+                    .startColorField(Component.literal(kind.displayName()), config.colorOf(kind))
                     .setDefaultValue(kind.defaultColor())
                     .setAlphaMode(false)
-                    .setTooltip(Text.literal("Highlight colour for " + kind.displayName() + "."))
+                    .setTooltip(Component.literal("Highlight colour for " + kind.displayName() + "."))
                     .setSaveConsumer(value -> config.setColorOf(kind, value))
                     .build());
 
                 group.add(entry
-                    .startBooleanToggle(Text.literal("  ↳ Show " + kind.displayName()), config.isKindEnabled(kind))
+                    .startBooleanToggle(Component.literal("  ↳ Show " + kind.displayName()), config.isKindEnabled(kind))
                     .setDefaultValue(true)
                     .setSaveConsumer(value -> config.setKindEnabled(kind, value))
                     .build());
@@ -209,58 +209,58 @@ public class ContainerUtilConfigScreen {
     // ── Indexing ─────────────────────────────────────────────────────────────
 
     private static void buildIndexing(ConfigBuilder builder, ConfigEntryBuilder entry, ContainerUtilConfig config) {
-        ConfigCategory indexing = builder.getOrCreateCategory(Text.literal("Indexing"));
+        ConfigCategory indexing = builder.getOrCreateCategory(Component.literal("Indexing"));
 
         indexing.addEntry(entry
-            .startBooleanToggle(Text.literal("Record Container Contents"), config.indexingEnabled)
+            .startBooleanToggle(Component.literal("Record Container Contents"), config.indexingEnabled)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Save what is inside a container when you open it. Turning this off leaves the existing index intact."))
+            .setTooltip(Component.literal("Save what is inside a container when you open it. Turning this off leaves the existing index intact."))
             .setSaveConsumer(value -> config.indexingEnabled = value)
             .build());
 
         indexing.addEntry(entry
-            .startIntSlider(Text.literal("Mark Stale After (days)"), config.staleAfterDays, 0, 90)
+            .startIntSlider(Component.literal("Mark Stale After (days)"), config.staleAfterDays, 0, 90)
             .setDefaultValue(14)
-            .setTooltip(Text.literal("Recorded contents older than this are flagged in search results and labels. 0 disables staleness entirely."))
+            .setTooltip(Component.literal("Recorded contents older than this are flagged in search results and labels. 0 disables staleness entirely."))
             .setSaveConsumer(value -> config.staleAfterDays = value)
             .build());
 
         indexing.addEntry(entry
-            .startBooleanToggle(Text.literal("Dim Never-Opened Containers"), config.dimUnopened)
+            .startBooleanToggle(Component.literal("Dim Never-Opened Containers"), config.dimUnopened)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Draw containers whose contents are unknown fainter than indexed ones."))
+            .setTooltip(Component.literal("Draw containers whose contents are unknown fainter than indexed ones."))
             .setSaveConsumer(value -> config.dimUnopened = value)
             .build());
 
         indexing.addEntry(entry
-            .startBooleanToggle(Text.literal("Auto-Prune Missing Containers"), config.autoPrune)
+            .startBooleanToggle(Component.literal("Auto-Prune Missing Containers"), config.autoPrune)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Forget a container once you are standing near where it used to be and it is demonstrably gone."))
+            .setTooltip(Component.literal("Forget a container once you are standing near where it used to be and it is demonstrably gone."))
             .setSaveConsumer(value -> config.autoPrune = value)
             .build());
 
         indexing.addEntry(entry
-            .startIntSlider(Text.literal("Prune Radius (blocks)"), config.pruneRadius, 4, 128)
+            .startIntSlider(Component.literal("Prune Radius (blocks)"), config.pruneRadius, 4, 128)
             .setDefaultValue(24)
-            .setTooltip(Text.literal("Only prune within this range, where the chunk is certainly loaded and the reading can be trusted."))
+            .setTooltip(Component.literal("Only prune within this range, where the chunk is certainly loaded and the reading can be trusted."))
             .setSaveConsumer(value -> config.pruneRadius = value)
             .build());
 
         indexing.addEntry(entry
-            .startBooleanToggle(Text.literal("Peek At Contents"), config.peekEnabled)
+            .startBooleanToggle(Component.literal("Peek At Contents"), config.peekEnabled)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Show a container's last-known contents when you look at it, without opening it."))
+            .setTooltip(Component.literal("Show a container's last-known contents when you look at it, without opening it."))
             .setSaveConsumer(value -> config.peekEnabled = value)
             .build());
 
         indexing.addEntry(entry
-            .startIntSlider(Text.literal("Peek Distance (blocks)"), config.peekDistance, 2, 64)
+            .startIntSlider(Component.literal("Peek Distance (blocks)"), config.peekDistance, 2, 64)
             .setDefaultValue(12)
             .setSaveConsumer(value -> config.peekDistance = value)
             .build());
 
         indexing.addEntry(entry
-            .startIntSlider(Text.literal("Peek Max Lines"), config.peekMaxLines, 1, 54)
+            .startIntSlider(Component.literal("Peek Max Lines"), config.peekMaxLines, 1, 54)
             .setDefaultValue(10)
             .setSaveConsumer(value -> config.peekMaxLines = value)
             .build());
@@ -277,7 +277,7 @@ public class ContainerUtilConfigScreen {
      * nothing is saved.
      */
     private static void buildQueryHelp(ConfigBuilder builder, ConfigEntryBuilder entry) {
-        ConfigCategory help = builder.getOrCreateCategory(Text.literal("Query Help"));
+        ConfigCategory help = builder.getOrCreateCategory(Component.literal("Query Help"));
 
         text(help, entry, "§fContainerUtil Search");
         text(help, entry, "§7Bind a key to §fOpen Container Search§7 in Options → Controls → ContainerUtil, "
@@ -287,7 +287,7 @@ public class ContainerUtilConfigScreen {
             + "nearest-first, and hovering one shows the five closest containers holding that same item.");
 
         // ── Item names ───────────────────────────────────────────────────────
-        SubCategoryBuilder names = entry.startSubCategory(Text.literal("1 · Finding items by name"))
+        SubCategoryBuilder names = entry.startSubCategory(Component.literal("1 · Finding items by name"))
             .setExpanded(true);
         text(names, entry, "§7Plain text matches an item's display name, its registry id, or its short path.");
         text(names, entry, "§a  diamond§7 — anything with \"diamond\" in the name: Diamond, Diamond Block, "
@@ -302,7 +302,7 @@ public class ContainerUtilConfigScreen {
         help.addEntry(names.build());
 
         // ── Item filters ─────────────────────────────────────────────────────
-        SubCategoryBuilder items = entry.startSubCategory(Text.literal("2 · Item filters"));
+        SubCategoryBuilder items = entry.startSubCategory(Component.literal("2 · Item filters"));
         text(items, entry, "§b  #tag§7 — item tag membership. The namespace is optional.");
         text(items, entry, "§a    #logs§7   §a#minecraft:planks§7   §a#wool§7   §a#coals§7   §a#swords§7   "
             + "§a#diamond_ores§7");
@@ -318,7 +318,7 @@ public class ContainerUtilConfigScreen {
         help.addEntry(items.build());
 
         // ── Container filters ────────────────────────────────────────────────
-        SubCategoryBuilder containers = entry.startSubCategory(Text.literal("3 · Container filters"));
+        SubCategoryBuilder containers = entry.startSubCategory(Component.literal("3 · Container filters"));
         text(containers, entry, "§b  dim:<name>§7 — restrict to a dimension.");
         text(containers, entry, "§a    dim:overworld§7   §a dim:nether§7   §a dim:end§7");
         text(containers, entry, "§b  in:<kind>§7 — restrict to a container type. §ftype:§7 and §fkind:§7 also work.");
@@ -341,7 +341,7 @@ public class ContainerUtilConfigScreen {
         help.addEntry(containers.build());
 
         // ── Amounts ──────────────────────────────────────────────────────────
-        SubCategoryBuilder amounts = entry.startSubCategory(Text.literal("4 · Amounts"));
+        SubCategoryBuilder amounts = entry.startSubCategory(Component.literal("4 · Amounts"));
         text(amounts, entry, "§b  count<op><number>§7 — compares against the §ftotal of the matched items§7 in "
             + "each container, not the container's slot count.");
         text(amounts, entry, "§a    count>64§7   §a count>=1000§7   §a count<10§7   §a count<=64§7   §a count=1§7");
@@ -350,7 +350,7 @@ public class ContainerUtilConfigScreen {
         help.addEntry(amounts.build());
 
         // ── Exclusions ───────────────────────────────────────────────────────
-        SubCategoryBuilder exclude = entry.startSubCategory(Text.literal("5 · Excluding things"));
+        SubCategoryBuilder exclude = entry.startSubCategory(Component.literal("5 · Excluding things"));
         text(exclude, entry, "§b  -term§7 or §b!term§7 — negation. Works on any term type.");
         text(exclude, entry, "§7On an §fitem§7 term this rejects the §fwhole container§7, not just that line. "
             + "§airon -cobblestone§7 means \"containers holding iron and §fno§7 cobblestone\" — which is "
@@ -361,7 +361,7 @@ public class ContainerUtilConfigScreen {
         help.addEntry(exclude.build());
 
         // ── Examples ─────────────────────────────────────────────────────────
-        SubCategoryBuilder examples = entry.startSubCategory(Text.literal("6 · Examples"))
+        SubCategoryBuilder examples = entry.startSubCategory(Component.literal("6 · Examples"))
             .setExpanded(true);
 
         text(examples, entry, "§f· Everyday lookups");
@@ -395,7 +395,7 @@ public class ContainerUtilConfigScreen {
         help.addEntry(examples.build());
 
         // ── Screen controls ──────────────────────────────────────────────────
-        SubCategoryBuilder controls = entry.startSubCategory(Text.literal("7 · Search screen controls"));
+        SubCategoryBuilder controls = entry.startSubCategory(Component.literal("7 · Search screen controls"));
         text(controls, entry, "§b  Click§7 — track that container and close the screen. A beam and a direction "
             + "arrow guide you to it.");
         text(controls, entry, "§b  Shift + Click§7 — track it but keep the screen open.");
@@ -409,65 +409,65 @@ public class ContainerUtilConfigScreen {
 
     /** A non-interactive line of help text. */
     private static void text(ConfigCategory category, ConfigEntryBuilder entry, String line) {
-        category.addEntry(entry.startTextDescription(Text.literal(line)).build());
+        category.addEntry(entry.startTextDescription(Component.literal(line)).build());
     }
 
     private static void text(SubCategoryBuilder group, ConfigEntryBuilder entry, String line) {
-        group.add(entry.startTextDescription(Text.literal(line)).build());
+        group.add(entry.startTextDescription(Component.literal(line)).build());
     }
 
     // ── Search & tracking ────────────────────────────────────────────────────
 
     private static void buildSearchAndTracking(ConfigBuilder builder, ConfigEntryBuilder entry,
                                                ContainerUtilConfig config) {
-        ConfigCategory search = builder.getOrCreateCategory(Text.literal("Search & Tracking"));
+        ConfigCategory search = builder.getOrCreateCategory(Component.literal("Search & Tracking"));
 
         search.addEntry(entry
-            .startBooleanToggle(Text.literal("Highlight Search Matches"), config.highlightSearchResults)
+            .startBooleanToggle(Component.literal("Highlight Search Matches"), config.highlightSearchResults)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Containers matching your last search are drawn in the highlight colour instead of their type colour."))
+            .setTooltip(Component.literal("Containers matching your last search are drawn in the highlight colour instead of their type colour."))
             .setSaveConsumer(value -> config.highlightSearchResults = value)
             .build());
 
         search.addEntry(entry
-            .startColorField(Text.literal("Search Match Colour"), config.searchHighlightColor)
+            .startColorField(Component.literal("Search Match Colour"), config.searchHighlightColor)
             .setDefaultValue(0xFFFFFF)
             .setAlphaMode(false)
             .setSaveConsumer(value -> config.searchHighlightColor = value & 0xFFFFFF)
             .build());
 
         search.addEntry(entry
-            .startIntField(Text.literal("Max Search Results"), config.searchResultLimit)
+            .startIntField(Component.literal("Max Search Results"), config.searchResultLimit)
             .setDefaultValue(200)
             .setMin(10).setMax(2000)
             .setSaveConsumer(value -> config.searchResultLimit = value)
             .build());
 
         search.addEntry(entry
-            .startBooleanToggle(Text.literal("Tracking Beam"), config.trackBeam)
+            .startBooleanToggle(Component.literal("Tracking Beam"), config.trackBeam)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Draw a vertical beam on the container you are being guided to."))
+            .setTooltip(Component.literal("Draw a vertical beam on the container you are being guided to."))
             .setSaveConsumer(value -> config.trackBeam = value)
             .build());
 
         search.addEntry(entry
-            .startBooleanToggle(Text.literal("Tracking HUD"), config.trackHud)
+            .startBooleanToggle(Component.literal("Tracking HUD"), config.trackHud)
             .setDefaultValue(true)
-            .setTooltip(Text.literal("Show the direction arrow and distance readout while tracking."))
+            .setTooltip(Component.literal("Show the direction arrow and distance readout while tracking."))
             .setSaveConsumer(value -> config.trackHud = value)
             .build());
 
         search.addEntry(entry
-            .startColorField(Text.literal("Tracking Colour"), config.trackColor)
+            .startColorField(Component.literal("Tracking Colour"), config.trackColor)
             .setDefaultValue(0x00E676)
             .setAlphaMode(false)
             .setSaveConsumer(value -> config.trackColor = value & 0xFFFFFF)
             .build());
 
         search.addEntry(entry
-            .startIntSlider(Text.literal("Stop Tracking Within (blocks)"), config.trackClearDistance, 0, 64)
+            .startIntSlider(Component.literal("Stop Tracking Within (blocks)"), config.trackClearDistance, 0, 64)
             .setDefaultValue(3)
-            .setTooltip(Text.literal("Clear the tracked container once you get this close. 0 keeps it until you clear it yourself."))
+            .setTooltip(Component.literal("Clear the tracked container once you get this close. 0 keeps it until you clear it yourself."))
             .setSaveConsumer(value -> config.trackClearDistance = value)
             .build());
     }

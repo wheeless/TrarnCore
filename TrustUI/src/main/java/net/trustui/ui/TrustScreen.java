@@ -1,17 +1,17 @@
 package net.trustui.ui;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.ThreePartsLayoutWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.client.util.DefaultSkinHelper;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.trustui.TrustUI;
 import net.trustui.config.ConfigManager;
 import net.trustui.trust.TrustCommands;
@@ -30,8 +30,8 @@ import java.util.Map;
  * Trust management for the claim you are standing in, built out of the same widgets as vanilla's
  * Social Interactions screen so it looks like part of the game rather than an overlay.
  *
- * <p>{@link ThreePartsLayoutWidget} gives the title/body/footer arrangement and the Done button;
- * {@link TrustListWidget} is a real {@code ElementListWidget}, which brings the bordered panel,
+ * <p>{@link HeaderAndFooterLayout} gives the title/body/footer arrangement and the Done button;
+ * {@link TrustListWidget} is a real {@code ContainerObjectSelectionList}, which brings the bordered panel,
  * scrollbar, row highlighting, focus outlines and narration with it.
  *
  * <p>Row heights are fixed there, so a row cannot literally grow when clicked. Expanding instead
@@ -42,11 +42,11 @@ public class TrustScreen extends Screen {
 
     private static final int ROW_HEIGHT = 32;
 
-    private final ThreePartsLayoutWidget layout = new ThreePartsLayoutWidget(this);
+    private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
 
-    private TextFieldWidget searchBox;
+    private EditBox searchBox;
     private TrustListWidget list;
-    private ButtonWidget refreshButton;
+    private Button refreshButton;
 
     private final List<PlayerEntry> all = new ArrayList<>();
     private String expanded;
@@ -55,38 +55,38 @@ public class TrustScreen extends Screen {
     private boolean inClaim = false;
 
     public TrustScreen() {
-        super(Text.literal("Claim Trust"));
+        super(Component.literal("Claim Trust"));
     }
 
     @Override
     protected void init() {
-        layout.addHeader(getTitle(), textRenderer);
+        layout.addTitleHeader(getTitle(), font);
 
-        list = layout.addBody(new TrustListWidget(client, width, layout.getContentHeight(),
+        list = layout.addToContents(new TrustListWidget(minecraft, width, layout.getContentHeight(),
             layout.getHeaderHeight(), ROW_HEIGHT));
 
-        searchBox = new TextFieldWidget(textRenderer, 0, 0, 200, 18, Text.literal("Search"));
+        searchBox = new EditBox(font, 0, 0, 200, 18, Component.literal("Search"));
         searchBox.setMaxLength(64);
-        searchBox.setPlaceholder(Text.literal("Search players").formatted(Formatting.DARK_GRAY));
-        searchBox.setChangedListener(text -> rebuildRows());
-        layout.addHeader(searchBox);
+        searchBox.setHint(Component.literal("Search players").withStyle(ChatFormatting.DARK_GRAY));
+        searchBox.setResponder(text -> rebuildRows());
+        layout.addToHeader(searchBox);
 
-        refreshButton = layout.addFooter(ButtonWidget.builder(Text.literal("Refresh"),
+        refreshButton = layout.addToFooter(Button.builder(Component.literal("Refresh"),
             b -> refresh()).width(80).build());
-        layout.addFooter(ButtonWidget.builder(ScreenTexts.DONE, b -> close()).width(80).build());
+        layout.addToFooter(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).width(80).build());
 
-        layout.forEachChild(this::addDrawableChild);
-        refreshWidgetPositions();
+        layout.visitWidgets(this::addRenderableWidget);
+        repositionElements();
         setInitialFocus(searchBox);
 
         refresh();
     }
 
     @Override
-    protected void refreshWidgetPositions() {
-        layout.refreshPositions();
+    protected void repositionElements() {
+        layout.arrangeElements();
         if (list != null) {
-            list.position(width, layout);
+            list.updateSize(width, layout);
         }
     }
 
@@ -113,16 +113,16 @@ public class TrustScreen extends Screen {
     private void buildEntries(Map<String, EnumSet<TrustLevel>> trusted) {
         all.clear();
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         String self = mc.player != null ? mc.player.getGameProfile().name() : "";
         Map<String, PlayerEntry> byName = new LinkedHashMap<>();
 
-        if (mc.getNetworkHandler() != null) {
-            for (PlayerListEntry entry : mc.getNetworkHandler().getPlayerList()) {
+        if (mc.getConnection() != null) {
+            for (PlayerInfo entry : mc.getConnection().getOnlinePlayers()) {
                 String name = entry.getProfile().name();
                 if (name == null || name.equalsIgnoreCase(self)) continue;
                 byName.put(name.toLowerCase(Locale.ROOT),
-                    new PlayerEntry(name, entry.getSkinTextures(), true, matchTrust(trusted, name)));
+                    new PlayerEntry(name, entry.getSkin(), true, matchTrust(trusted, name)));
             }
         }
 
@@ -133,7 +133,7 @@ public class TrustScreen extends Screen {
                 String key = name.toLowerCase(Locale.ROOT);
                 if (byName.containsKey(key)) continue;
                 // No profile to look a skin up from, so fall back to the default.
-                byName.put(key, new PlayerEntry(name, DefaultSkinHelper.getSteve(), false, entry.getValue()));
+                byName.put(key, new PlayerEntry(name, DefaultPlayerSkin.getDefaultSkin(), false, entry.getValue()));
             }
         }
 
@@ -159,7 +159,7 @@ public class TrustScreen extends Screen {
         if (list == null) return;
         list.clear();
 
-        String query = searchBox == null ? "" : searchBox.getText().trim().toLowerCase(Locale.ROOT);
+        String query = searchBox == null ? "" : searchBox.getValue().trim().toLowerCase(Locale.ROOT);
         for (PlayerEntry player : all) {
             if (!query.isEmpty() && !player.name().toLowerCase(Locale.ROOT).contains(query)) continue;
 
@@ -186,7 +186,7 @@ public class TrustScreen extends Screen {
 
     private void revoke(PlayerEntry player) {
         TrustCommands.revoke(player.name());
-        TrustUI.CHAT.send("Removed all trust from " + player.name(), Formatting.GOLD);
+        TrustUI.CHAT.send("Removed all trust from " + player.name(), ChatFormatting.GOLD);
         afterChange();
     }
 
@@ -205,8 +205,8 @@ public class TrustScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         // Status sits just under the title, where vanilla puts "Server26 - 6 players".
         String status;
@@ -220,26 +220,26 @@ public class TrustScreen extends Screen {
             long count = all.stream().filter(PlayerEntry::hasAnyTrust).count();
             status = count + (count == 1 ? " player trusted" : " players trusted");
         }
-        context.drawCenteredTextWithShadow(textRenderer, status, width / 2,
+        context.centeredText(font, status, width / 2,
             layout.getHeaderHeight() - 12, color);
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
+    public boolean keyPressed(KeyEvent input) {
         // Only when the search box does not have focus, or typing "r" would refresh instead.
         if (input.key() == GLFW.GLFW_KEY_R && (searchBox == null || !searchBox.isFocused())) {
             refresh();
             return true;
         }
-        if (TrustUI.OPEN_MENU != null && TrustUI.OPEN_MENU.matchesKey(input)) {
-            close();
+        if (TrustUI.OPEN_MENU != null && TrustUI.OPEN_MENU.matches(input)) {
+            onClose();
             return true;
         }
         return super.keyPressed(input);
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

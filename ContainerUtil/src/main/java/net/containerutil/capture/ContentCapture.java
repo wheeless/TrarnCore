@@ -11,22 +11,22 @@ import net.containerutil.data.WorldIdentity;
 import net.containerutil.scan.ContainerScanner;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ContainerComponent;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.Container;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Holder;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -42,7 +42,7 @@ import java.util.Map;
  * <ul>
  *   <li>Fabric's use callbacks tell us the block or entity you interacted with. They fire
  *       before the screen exists, so the target is parked as {@link #pending}.</li>
- *   <li>Polling {@code client.currentScreen} each tick gives us the open {@link ScreenHandler}
+ *   <li>Polling {@code client.screen} each tick gives us the open {@link AbstractContainerMenu}
  *       and therefore the slots.</li>
  * </ul>
  *
@@ -76,20 +76,20 @@ public class ContentCapture {
     public static void register() {
         UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
             try {
-                if (world.isClient()) onUseBlock(world.getBlockState(hit.getBlockPos()), hit.getBlockPos());
+                if (world.isClientSide()) onUseBlock(world.getBlockState(hit.getBlockPos()), hit.getBlockPos());
             } catch (Exception e) {
                 ContainerUtil.LOGGER.error("[ContainerUtil] Use-block capture hook crashed", e);
             }
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
 
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             try {
-                if (world.isClient()) onUseEntity(entity);
+                if (world.isClientSide()) onUseEntity(entity);
             } catch (Exception e) {
                 ContainerUtil.LOGGER.error("[ContainerUtil] Use-entity capture hook crashed", e);
             }
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
@@ -112,34 +112,34 @@ public class ContentCapture {
             new int[]{secondary.getX(), secondary.getY(), secondary.getZ()}, null, System.currentTimeMillis());
     }
 
-    private static void onUseEntity(net.minecraft.entity.Entity entity) {
+    private static void onUseEntity(net.minecraft.world.entity.Entity entity) {
         ContainerKind kind = ContainerKind.fromEntity(entity);
         if (kind == null) return;
         String dim = WorldIdentity.currentDimension();
         if (dim == null) return;
         pending = new PendingTarget(kind, dim,
             (int) Math.floor(entity.getX()), (int) Math.floor(entity.getY()), (int) Math.floor(entity.getZ()),
-            null, entity.getUuidAsString(), System.currentTimeMillis());
+            null, entity.getStringUUID(), System.currentTimeMillis());
     }
 
     // ── Tick ─────────────────────────────────────────────────────────────────
 
-    public static void tick(MinecraftClient client) {
+    public static void tick(Minecraft client) {
         if (!ConfigManager.get().indexingEnabled || !IndexManager.isActive()) {
             if (openRecord != null) reset();
             return;
         }
 
-        if (client.currentScreen instanceof HandledScreen<?> screen) {
+        if (client.screen instanceof AbstractContainerScreen<?> screen) {
             if (openRecord == null) tryBind(screen);
-            if (openRecord != null) snapshot(screen.getScreenHandler());
+            if (openRecord != null) snapshot(screen.getMenu());
         } else if (openRecord != null) {
             commit();
         }
     }
 
     /** Joins the parked click target to the screen that just opened. */
-    private static void tryBind(HandledScreen<?> screen) {
+    private static void tryBind(AbstractContainerScreen<?> screen) {
         PendingTarget target = pending;
         if (target == null || target.isExpired()) {
             pending = null;
@@ -169,13 +169,13 @@ public class ContentCapture {
      * Reads a plain {@link Inventory} directly, for screenless containers the client already
      * has the contents of — see {@link net.containerutil.container.ContainerKind#hasClientVisibleContents()}.
      */
-    public static Snapshot snapshotInventory(Inventory inventory) {
+    public static Snapshot snapshotInventory(Container inventory) {
         Map<String, ItemEntry> merged = new LinkedHashMap<>();
-        int slotCount = inventory.size();
+        int slotCount = inventory.getContainerSize();
         int usedSlots = 0;
 
         for (int i = 0; i < slotCount; i++) {
-            ItemStack stack = inventory.getStack(i);
+            ItemStack stack = inventory.getItem(i);
             if (stack == null || stack.isEmpty()) continue;
             usedSlots++;
             addStack(merged, stack, null);
@@ -208,7 +208,7 @@ public class ContentCapture {
      * Reads the container's slots. Re-run every tick while the screen is open so the committed
      * snapshot reflects what you left behind, not what was there when you opened it.
      */
-    private static void snapshot(ScreenHandler handler) {
+    private static void snapshot(AbstractContainerMenu handler) {
         if (handler == null) return;
 
         // Merge equivalent stacks so five stacks of cobblestone become one "320× Cobblestone"
@@ -221,10 +221,10 @@ public class ContentCapture {
             // The container's slots are everything that is not the player's own inventory.
             // This works uniformly across chests, hoppers, furnaces, minecarts and horses
             // without needing to know a single concrete handler type.
-            if (slot.inventory instanceof PlayerInventory) continue;
+            if (slot.container instanceof net.minecraft.world.entity.player.Inventory) continue;
             slotCount++;
 
-            ItemStack stack = slot.getStack();
+            ItemStack stack = slot.getItem();
             if (stack == null || stack.isEmpty()) continue;
             usedSlots++;
 
@@ -243,16 +243,16 @@ public class ContentCapture {
      * than sitting loose in a chest.
      */
     private static void addNested(Map<String, ItemEntry> merged, ItemStack stack) {
-        ContainerComponent nested = stack.get(DataComponentTypes.CONTAINER);
+        ItemContainerContents nested = stack.get(DataComponents.CONTAINER);
         if (nested == null) return;
         String parentName = displayName(stack);
-        for (ItemStack inner : nested.iterateNonEmpty()) {
+        for (ItemStack inner : nested.nonEmptyItemCopyStream().toList()) {
             if (inner != null && !inner.isEmpty()) addStack(merged, inner, parentName);
         }
     }
 
     private static void addStack(Map<String, ItemEntry> merged, ItemStack stack, String nestedIn) {
-        String id = Registries.ITEM.getId(stack.getItem()).toString();
+        String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
         List<String> enchants = enchantIds(stack);
         String name = displayName(stack);
 
@@ -272,24 +272,24 @@ public class ContentCapture {
 
     private static String displayName(ItemStack stack) {
         try {
-            return stack.getName().getString();
+            return stack.getHoverName().getString();
         } catch (Exception e) {
-            return Registries.ITEM.getId(stack.getItem()).getPath();
+            return BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
         }
     }
 
     /** Enchantment ids on a stack, covering both applied enchantments and enchanted books. */
     private static List<String> enchantIds(ItemStack stack) {
         List<String> out = null;
-        out = collectEnchants(stack.get(DataComponentTypes.ENCHANTMENTS), out);
-        out = collectEnchants(stack.get(DataComponentTypes.STORED_ENCHANTMENTS), out);
+        out = collectEnchants(stack.get(DataComponents.ENCHANTMENTS), out);
+        out = collectEnchants(stack.get(DataComponents.STORED_ENCHANTMENTS), out);
         return out;
     }
 
-    private static List<String> collectEnchants(ItemEnchantmentsComponent component, List<String> out) {
+    private static List<String> collectEnchants(ItemEnchantments component, List<String> out) {
         if (component == null || component.isEmpty()) return out;
-        for (RegistryEntry<Enchantment> entry : component.getEnchantments()) {
-            String id = entry.getKey().map(key -> key.getValue().toString()).orElse(null);
+        for (Holder<Enchantment> entry : component.keySet()) {
+            String id = entry.unwrapKey().map(key -> key.identifier().toString()).orElse(null);
             if (id == null) continue;
             if (out == null) out = new ArrayList<>(2);
             if (!out.contains(id)) out.add(id);

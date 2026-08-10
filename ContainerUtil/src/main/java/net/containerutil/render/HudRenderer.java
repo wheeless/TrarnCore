@@ -7,10 +7,10 @@ import net.containerutil.data.ContainerRecord;
 import net.containerutil.data.ItemEntry;
 import net.containerutil.data.WorldIdentity;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public class HudRenderer {
     private static final String[] ARROWS = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
 
     private static final Identifier HUD_ELEMENT_ID =
-        Identifier.of(ContainerUtil.MOD_ID, "overlay");
+        Identifier.fromNamespaceAndPath(ContainerUtil.MOD_ID, "overlay");
 
     private static long lastError = 0;
 
@@ -54,11 +54,11 @@ public class HudRenderer {
         });
     }
 
-    private static void renderHud(DrawContext context) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+    private static void renderHud(GuiGraphicsExtractor context) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
         // Nothing to say while a menu is up — the search screen draws its own chrome.
-        if (client.currentScreen != null) return;
+        if (client.screen != null) return;
 
         ContainerUtilConfig config = ConfigManager.get();
 
@@ -68,11 +68,11 @@ public class HudRenderer {
 
     // ── Tracking readout ─────────────────────────────────────────────────────
 
-    private static void renderTracking(DrawContext context, MinecraftClient client, ContainerUtilConfig config) {
+    private static void renderTracking(GuiGraphicsExtractor context, Minecraft client, ContainerUtilConfig config) {
         ContainerRecord tracked = TrackedContainer.get();
         if (tracked == null) return;
 
-        TextRenderer font = client.textRenderer;
+        Font font = client.font;
         String dim = WorldIdentity.currentDimension();
 
         String line;
@@ -80,7 +80,7 @@ public class HudRenderer {
             line = "▶ " + tracked.displayName() + " is in " + tracked.shortDim()
                 + "  (" + tracked.coordsString() + ")";
         } else {
-            net.minecraft.util.math.Vec3d anchor = ViewAnchor.origin(client);
+            net.minecraft.world.phys.Vec3 anchor = ViewAnchor.origin(client);
             double dx = tracked.centerX() - anchor.x;
             double dz = tracked.centerZ() - anchor.z;
             double distance = Math.sqrt(dx * dx + dz * dz);
@@ -91,13 +91,13 @@ public class HudRenderer {
                 + "  " + (int) Math.round(distance) + "m  (" + tracked.coordsString() + ")";
         }
 
-        int width = font.getWidth(line);
-        int x = (client.getWindow().getScaledWidth() - width) / 2;
+        int width = font.width(line);
+        int x = (client.getWindow().getGuiScaledWidth() - width) / 2;
         int y = 6;
 
-        context.fill(x - 5, y - 4, x + width + 5, y + font.fontHeight + 3, PANEL_BG);
+        context.fill(x - 5, y - 4, x + width + 5, y + font.lineHeight + 3, PANEL_BG);
         context.fill(x - 5, y - 4, x + width + 5, y - 3, PANEL_BORDER);
-        context.drawText(client.textRenderer, line, x, y, COLOR_TRACK, false);
+        context.text(client.font, line, x, y, COLOR_TRACK, false);
     }
 
     /**
@@ -107,7 +107,7 @@ public class HudRenderer {
      * {@code atan2(-dx, dz)} to line the arrow up with the player's own facing before the
      * difference is bucketed into eight directions.
      */
-    private static String arrowFor(MinecraftClient client, double dx, double dz) {
+    private static String arrowFor(Minecraft client, double dx, double dz) {
         double targetYaw = Math.toDegrees(Math.atan2(-dx, dz));
         double relative = targetYaw - ViewAnchor.yaw(client);
         relative = ((relative % 360) + 360) % 360;
@@ -117,11 +117,11 @@ public class HudRenderer {
 
     // ── Peek panel ───────────────────────────────────────────────────────────
 
-    private static void renderPeek(DrawContext context, MinecraftClient client, ContainerUtilConfig config) {
+    private static void renderPeek(GuiGraphicsExtractor context, Minecraft client, ContainerUtilConfig config) {
         ContainerRecord record = ContainerPeek.lookedAt(client, config.peekDistance);
         if (record == null || record.isUnopened()) return;
 
-        TextRenderer font = client.textRenderer;
+        Font font = client.font;
 
         String title = record.displayName();
         String subtitle = record.usedSlots + "/" + record.slotCount + " slots"
@@ -149,16 +149,16 @@ public class HudRenderer {
             lines.add("empty");
         }
 
-        int width = Math.max(font.getWidth(title), font.getWidth(subtitle));
-        for (String line : lines) width = Math.max(width, font.getWidth(line));
+        int width = Math.max(font.width(title), font.width(subtitle));
+        for (String line : lines) width = Math.max(width, font.width(line));
 
         int padding = 6;
-        int lineHeight = font.fontHeight + 1;
+        int lineHeight = font.lineHeight + 1;
         int boxWidth = width + padding * 2;
         int boxHeight = padding * 2 + lineHeight * (lines.size() + 2) + 2;
 
         int x = 8;
-        int y = Math.max(8, (client.getWindow().getScaledHeight() - boxHeight) / 2);
+        int y = Math.max(8, (client.getWindow().getGuiScaledHeight() - boxHeight) / 2);
 
         context.fill(x, y, x + boxWidth, y + boxHeight, PANEL_BG);
         context.fill(x, y, x + boxWidth, y + 1, PANEL_BORDER);
@@ -169,13 +169,13 @@ public class HudRenderer {
         int textX = x + padding;
         int textY = y + padding;
 
-        context.drawText(font, title, textX, textY, COLOR_TITLE, false);
+        context.text(font, title, textX, textY, COLOR_TITLE, false);
         textY += lineHeight;
-        context.drawText(font, subtitle, textX, textY, stale ? COLOR_STALE : COLOR_DIM, false);
+        context.text(font, subtitle, textX, textY, stale ? COLOR_STALE : COLOR_DIM, false);
         textY += lineHeight + 2;
 
         for (String line : lines) {
-            context.drawText(font, line, textX, textY, COLOR_DIM, false);
+            context.text(font, line, textX, textY, COLOR_DIM, false);
             textY += lineHeight;
         }
     }
