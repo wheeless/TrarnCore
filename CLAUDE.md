@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A monorepo of client-side Fabric mods for Minecraft **1.21.11**, plus `TrarnCore`, the shared
+A monorepo of client-side Fabric mods for Minecraft **26.1.2**, plus `TrarnCore`, the shared
 library they all bundle. Published under **Trarn** at `github.com/wheeless/TrarnCore`.
 
 | Project | Purpose |
@@ -25,7 +25,7 @@ Everything is **client-side only**. No mod requires a server-side component.
 non-interactive shell does not source it:
 
 ```bash
-export JAVA_HOME="$HOME/.sdkman/candidates/java/21.0.11-tem"
+export JAVA_HOME="$HOME/.sdkman/candidates/java/25.0.3-tem"
 export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
@@ -50,7 +50,7 @@ Each project is a **standalone Gradle build** with its own wrapper — there is 
 Mods consume `TrarnCore` through a Gradle **composite build** (`includeBuild('../TrarnCore')` in
 each `settings.gradle`) and bundle it with Loom's `include` (jar-in-jar). There is no publish step.
 
-Minecraft/Yarn/Loader/Fabric versions are pinned once in `versions.properties`; each project keeps
+Minecraft/Loader/Fabric versions are pinned once in `versions.properties`; each project keeps
 a fallback copy in its own `gradle.properties` so it still builds if copied out.
 
 ## Rules that are not obvious
@@ -102,20 +102,25 @@ every tick and so must overwrite itself.
 
 ## Verifying Minecraft APIs
 
-Do not guess at Yarn mappings — they churn between versions. Check against the mapped jar:
+**Minecraft 26.x ships unobfuscated** — there is no Yarn and no intermediary; the jar carries
+Mojang's own names. Never guess at a name; check the jar:
 
 ```bash
-MCJAR=~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged/\
-1.21.11-net.fabricmc.yarn.1_21_11.1.21.11+build.6-v2/\
-minecraft-merged-1.21.11-net.fabricmc.yarn.1_21_11.1.21.11+build.6-v2.jar
-
-javap -cp "$MCJAR" net.minecraft.client.gui.screen.Screen | grep -E "keyPressed|render"
+# the vanilla client jar, as downloaded by the launcher
+javap -cp <path-to-26.1.2-client.jar> net.minecraft.client.gui.screens.Screen | grep -E "keyPressed"
 ```
 
-Fabric API and Cloth Config jars are under `~/.gradle/caches/modules-2/files-2.1/`. This session's
-recurring surprises: `Screen.keyPressed(KeyInput)`, `mouseClicked(Click, boolean)`,
-`KeyBinding.matchesKey(KeyInput)`, `GameProfile.name()` (a record accessor, not `getName()`),
-`Entity.getEntityPos()`.
+The full Yarn -> Mojang translation table, and every trap found while porting, is in
+[`plans/port-to-26.md`](plans/port-to-26.md). Read it before touching Minecraft API in this repo.
+
+Two traps worth repeating here:
+
+- **`RenderLayer` still exists** in 26.x as an entity feature layer — completely unrelated to the
+  old Yarn `RenderLayer`, which is now `RenderType`. A careless rename lands on the wrong one and
+  still compiles.
+- **Never blind find-and-replace type names.** Renaming `Hand` -> `InteractionHand` inside a string
+  literal turned the user-visible message "Hand cleared" into "InteractionHand cleared". Any
+  scripted translation must skip string literals.
 
 ## Releasing
 

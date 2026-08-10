@@ -56,7 +56,7 @@ later — or to overwrite something you wanted to read. Chat is a log, so severa
 | --- | --- | --- |
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | |
+| Java 25 | Yes | |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Needed to reach the config screen |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Needed for the config screen UI |
 
@@ -73,9 +73,9 @@ later — or to overwrite something you wanted to read. Chat is a log, so severa
 ```
 
 The jar lands in `build/libs/`, and is also copied to [`../ModBuilds/`](../ModBuilds) alongside the
-other mods' output for easy installing. Requires JDK 21.
+other mods' output for easy installing. Requires JDK 25.
 
-Minecraft/Yarn/Loader/Fabric versions come from [`../versions.properties`](../versions.properties),
+Minecraft/Loader/Fabric versions come from [`../versions.properties`](../versions.properties),
 shared with the sibling mods, so a version bump is one file for all of them.
 [TrarnCore](../TrarnCore) is built from source automatically via a Gradle composite build — there is
 no publish step.
@@ -99,5 +99,5 @@ instead of silently swapping with the wrong row.
 ## Related mods
 
 [ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) ·
-[ContainerUtil](../ContainerUtil) — same Minecraft/Yarn/Fabric target, shared
+[ContainerUtil](../ContainerUtil) — same Minecraft/Fabric target, shared
 [TrarnCore](../TrarnCore) plumbing.

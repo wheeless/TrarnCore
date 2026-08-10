@@ -4,23 +4,22 @@ import net.claimviz.ClaimViz;
 import net.claimviz.data.PlayerData;
 import net.claimviz.data.PlayerFetcher;
 import net.claimviz.event.ServerJoinHandler;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.player.SkinTextures;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.Camera;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.player.PlayerSkin;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 import net.trarncore.render.Shapes;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -36,20 +35,21 @@ public class PlayerRenderer {
 
     // Captured during END_MAIN, consumed in HudRenderCallback — both on render thread.
     private static Matrix4f storedMVP;
-    private static Vec3d storedCamPos;
+    private static Vec3 storedCamPos;
 
     private static long lastWorldRenderError = 0;
     private static long lastHudRenderError = 0;
     private static long lastRenderStats = 0;
 
     public static void register() {
-        WorldRenderEvents.END_MAIN.register(PlayerRenderer::renderWorld);
-        HudRenderCallback.EVENT.register((drawContext, tickDelta) -> renderHud(drawContext));
+        LevelRenderEvents.END_MAIN.register(PlayerRenderer::renderWorld);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(ClaimViz.MOD_ID, "players"),
+            (drawContext, tickCounter) -> renderHud(drawContext));
     }
 
-    // ── World-space: health cross + yaw tick + name tag ──────────────────────
+    // ── Level-space: health cross + yaw tick + name tag ──────────────────────
 
-    private static void renderWorld(WorldRenderContext context) {
+    private static void renderWorld(LevelRenderContext context) {
         long start = System.nanoTime();
         try {
             renderWorldInternal(context);
@@ -66,34 +66,34 @@ public class PlayerRenderer {
         }
     }
 
-    private static void renderWorldInternal(WorldRenderContext context) {
+    private static void renderWorldInternal(LevelRenderContext context) {
         if (!ClaimViz.showPlayers) return;
         var cfg = ServerJoinHandler.getActiveConfig();
         if (cfg == null || !cfg.showPlayers) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
 
         String localDim = ServerJoinHandler.getLastDimension();
         if (localDim == null) return;
 
-        Camera camera = client.gameRenderer.getCamera();
-        Vec3d cam = camera.getCameraPos();
+        Camera camera = client.gameRenderer.getMainCamera();
+        Vec3 cam = camera.position();
 
         // Build CPU-side MVP for HUD skin-icon projection this frame
-        Quaternionf invRot = camera.getRotation().conjugate(new Quaternionf());
+        Quaternionf invRot = camera.rotation().conjugate(new Quaternionf());
         Matrix4f view = new Matrix4f()
             .rotate(invRot)
             .translate(-(float) cam.x, -(float) cam.y, -(float) cam.z);
-        int fovDeg = client.options.getFov().getValue();
+        int fovDeg = client.options.fov().get();
         float fovRad = (float) Math.toRadians(fovDeg);
-        float aspect = (float) client.getWindow().getScaledWidth()
-                      / (float) client.getWindow().getScaledHeight();
+        float aspect = (float) client.getWindow().getGuiScaledWidth()
+                      / (float) client.getWindow().getGuiScaledHeight();
         Matrix4f proj = new Matrix4f().perspective(fovRad, aspect, 0.05f, 768f);
         storedMVP = proj.mul(view, new Matrix4f());
         storedCamPos = cam;
 
-        String selfUuid = client.player.getUuidAsString().replace("-", "");
+        String selfUuid = client.player.getStringUUID().replace("-", "");
         double renderDist = cfg.playerRenderDistance;
         double renderDistSq = renderDist * renderDist;
         double selfX = client.player.getX();
@@ -113,15 +113,15 @@ public class PlayerRenderer {
 
         if (players.isEmpty()) return;
 
-        MatrixStack matrices = context.matrices();
-        VertexConsumerProvider consumers = context.consumers();
+        PoseStack matrices = context.poseStack();
+        MultiBufferSource consumers = context.bufferSource();
 
         // ── Health cross markers ─────────────────────────────────────────────
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cam.x, -cam.y, -cam.z);
-        Matrix4f mat = matrices.peek().getPositionMatrix();
-        VertexConsumer vc = consumers.getBuffer(RenderLayers.LINES);
+        Matrix4f mat = matrices.last().pose();
+        VertexConsumer vc = consumers.getBuffer(RenderTypes.LINES);
 
         for (PlayerData pd : players) {
             float x = (float) pd.x();
@@ -138,43 +138,43 @@ public class PlayerRenderer {
             addLine(vc, mat, x, y + 2f, z, x + tx, y + 2f, z + tz, r, g, 0f);
         }
 
-        matrices.pop();
+        matrices.popPose();
 
-        if (consumers instanceof VertexConsumerProvider.Immediate imm) {
-            imm.draw(RenderLayers.LINES);
+        if (consumers instanceof MultiBufferSource.BufferSource imm) {
+            imm.endBatch(RenderTypes.LINES);
         }
 
         // ── Name tag billboards ──────────────────────────────────────────────
 
         for (PlayerData pd : players) {
-            matrices.push();
+            matrices.pushPose();
             matrices.translate(
                 pd.x() - cam.x,
                 pd.y() + 2.3 - cam.y,
                 pd.z() - cam.z
             );
-            matrices.multiply(camera.getRotation());
+            matrices.mulPose(camera.rotation());
             matrices.scale(0.025f, -0.025f, 0.025f);
 
-            Matrix4f textMat = matrices.peek().getPositionMatrix();
+            Matrix4f textMat = matrices.last().pose();
             String name = pd.name();
-            int tw = client.textRenderer.getWidth(name);
+            int tw = client.font.width(name);
 
-            client.textRenderer.draw(
+            client.font.drawInBatch(
                 name, -tw / 2f, 0, 0xFFFFFFFF, false,
                 textMat, consumers,
-                TextRenderer.TextLayerType.SEE_THROUGH,
+                Font.DisplayMode.SEE_THROUGH,
                 0x44000000,
-                LightmapTextureManager.MAX_LIGHT_COORDINATE
+                0xF000F0
             );
 
-            matrices.pop();
+            matrices.popPose();
         }
     }
 
     // ── HUD overlay: skin face icon ──────────────────────────────────────────
 
-    private static void renderHud(DrawContext drawContext) {
+    private static void renderHud(GuiGraphicsExtractor drawContext) {
         long start = System.nanoTime();
         try {
             renderHudInternal(drawContext);
@@ -191,21 +191,21 @@ public class PlayerRenderer {
         }
     }
 
-    private static void renderHudInternal(DrawContext drawContext) {
+    private static void renderHudInternal(GuiGraphicsExtractor drawContext) {
         if (!ClaimViz.showPlayers) return;
         var cfg = ServerJoinHandler.getActiveConfig();
         if (cfg == null || !cfg.showPlayers) return;
         if (storedMVP == null || storedCamPos == null) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
 
         String localDim = ServerJoinHandler.getLastDimension();
         if (localDim == null) return;
 
-        String selfUuid = client.player.getUuidAsString().replace("-", "");
-        int w = client.getWindow().getScaledWidth();
-        int h = client.getWindow().getScaledHeight();
+        String selfUuid = client.player.getStringUUID().replace("-", "");
+        int w = client.getWindow().getGuiScaledWidth();
+        int h = client.getWindow().getGuiScaledHeight();
         double renderDistSq = (double) cfg.playerRenderDistance * cfg.playerRenderDistance;
         double selfX = client.player.getX();
         double selfZ = client.player.getZ();
@@ -225,24 +225,18 @@ public class PlayerRenderer {
             Identifier skin = getSkin(pd, client);
             if (skin == null) continue;
 
-            // Signature: drawTexturedQuad(id, x1, y1, x2, y2,  u1, u2,  v1, v2)
+            // Signature: blit(pipeline, id, x, y, u, v, destW, destH, srcW, srcH, texW, texH)
             // Face region: pixels (8,8)-(16,16) on a 64x64 skin
-            drawContext.drawTexturedQuad(skin,
-                sx - 8, sy - 24, sx + 8, sy - 8,
-                8f / 64f, 16f / 64f,
-                8f / 64f, 16f / 64f
-            );
+            drawContext.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, skin,
+                sx - 8, sy - 24, 8f, 8f, 16, 16, 8, 8, 64, 64);
             // Hat overlay: pixels (40,8)-(48,16) on a 64x64 skin
-            drawContext.drawTexturedQuad(skin,
-                sx - 8, sy - 24, sx + 8, sy - 8,
-                40f / 64f, 48f / 64f,
-                8f / 64f, 16f / 64f
-            );
+            drawContext.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, skin,
+                sx - 8, sy - 24, 40f, 8f, 16, 16, 8, 8, 64, 64);
         }
     }
 
     private static float[] project(double wx, double wy, double wz,
-                                   Vec3d cam, Matrix4f mvp, int sw, int sh) {
+                                   Vec3 cam, Matrix4f mvp, int sw, int sh) {
         Vector4f v = new Vector4f(
             (float)(wx - cam.x),
             (float)(wy - cam.y),
@@ -260,17 +254,17 @@ public class PlayerRenderer {
         };
     }
 
-    private static Identifier getSkin(PlayerData pd, MinecraftClient client) {
-        if (client.getNetworkHandler() == null) return null;
+    private static Identifier getSkin(PlayerData pd, Minecraft client) {
+        if (client.getConnection() == null) return null;
         try {
             UUID uuid = UUID.fromString(
                 pd.uuid().substring(0, 8) + "-" + pd.uuid().substring(8, 12) + "-" +
                 pd.uuid().substring(12, 16) + "-" + pd.uuid().substring(16, 20) + "-" +
                 pd.uuid().substring(20)
             );
-            PlayerListEntry entry = client.getNetworkHandler().getPlayerListEntry(uuid);
+            PlayerInfo entry = client.getConnection().getPlayerInfo(uuid);
             if (entry == null) return null;
-            SkinTextures textures = entry.getSkinTextures();
+            PlayerSkin textures = entry.getSkin();
             return textures != null ? textures.body().texturePath() : null;
         } catch (Exception e) {
             return null;

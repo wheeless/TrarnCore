@@ -12,7 +12,7 @@ Client-side only — nothing is installed server-side, and the index lives on yo
 | --- | --- | --- |
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | |
+| Java 25 | Yes | |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Needed to reach the config screen and the in-game query reference |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Needed for the config screen UI |
 
@@ -23,7 +23,7 @@ Client-side only — nothing is installed server-side, and the index lives on yo
 **Highlights.** Every container in a configurable chunk radius — measured *horizontally*, since
 chunks load as full columns, so a chest at bedrock is highlighted just like one at your feet —
 gets a coloured box. There is an optional vertical limit if you want one, off by default. Twenty-three
-container kinds are recognised — including 1.21.11's copper chests (all eight oxidation and waxed
+container kinds are recognised — including copper chests (all eight oxidation and waxed
 variants) and shelves (all twelve woods) — grouped into five colour families so a wall of chests
 reads as "storage" at a glance while a trapped chest or ender chest is unmistakably not one of
 them. Every kind's colour and visibility is individually overridable.
@@ -142,15 +142,15 @@ storage layer sits behind `IndexStore`, so swapping it later is a drop-in.
 ```
 
 The jar lands in `build/libs/`, and is also copied to [`../ModBuilds/`](../ModBuilds) alongside the
-other mods' output for easy installing. Requires JDK 21.
+other mods' output for easy installing. Requires JDK 25.
 
-Minecraft/Yarn/Loader/Fabric versions come from [`../versions.properties`](../versions.properties),
+Minecraft/Loader/Fabric versions come from [`../versions.properties`](../versions.properties),
 shared with the sibling mods. [TrarnCore](../TrarnCore) is built from source automatically via a
 Gradle composite build — there is no publish step.
 
 ## Updating to a new Minecraft version
 
-Built for 1.21.11, but structured so the bump is small:
+Built for 26.1.2, but structured so the bump is small:
 
 - **No mixins.** Content capture joins Fabric's `UseBlockCallback` / `UseEntityCallback` to a
   per-tick poll of `client.currentScreen` instead of mixing into `HandledScreen`. Mixins are what
@@ -186,5 +186,5 @@ Built for 1.21.11, but structured so the bump is small:
 ## Related mods
 
 [ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) ·
-[RSwitch](../RSwitch) — same Minecraft/Yarn/Fabric target, shared [TrarnCore](../TrarnCore)
+[RSwitch](../RSwitch) — same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore)
 plumbing.

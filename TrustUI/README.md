@@ -95,7 +95,7 @@ the parser depends on.
 | --- | --- | --- |
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | |
+| Java 25 | Yes | |
 | A server running [GriefPrevention](https://www.spigotmc.org/resources/griefprevention.1884/) | Yes | Nothing to read otherwise |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Needed to reach the config screen |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Needed for the config screen UI |
@@ -113,7 +113,7 @@ the parser depends on.
 ```
 
 The jar lands in `build/libs/`, and is also copied to [`../ModBuilds/`](../ModBuilds) alongside the
-other mods' output. Requires JDK 21.
+other mods' output. Requires JDK 25.
 
 ## Roadmap
 
@@ -124,5 +124,5 @@ other mods' output. Requires JDK 21.
 ## Related mods
 
 [ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) ·
-[ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) — same Minecraft/Yarn/Fabric target,
+[ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) — same Minecraft/Fabric target,
 shared [TrarnCore](../TrarnCore) plumbing.

@@ -4,11 +4,11 @@ import net.claimviz.ClaimViz;
 import net.claimviz.data.ClaimRect;
 import net.claimviz.data.PlayerData;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -79,7 +79,7 @@ public class XaeroIntegration {
 				UUID uuid = parseUuid(pd.uuid());
 				if (uuid == null)
 					continue;
-				RegistryKey<World> dimKey = dimKey(pd.world());
+				ResourceKey<Level> dimKey = dimKey(pd.world());
 				managerUpdate.invoke(manager, uuid, pd.x(), pd.y(), pd.z(), dimKey);
 			}
 		} catch (Exception e) {
@@ -111,7 +111,7 @@ public class XaeroIntegration {
 		ClaimViz.LOGGER.info("ClaimViz: syncClaimWaypoints called with {} claims", claims.size());
 		// Dispatch to main thread — Xaero's WaypointSet is not thread-safe; the render
 		// thread iterates it to draw the minimap concurrently with our background fetch.
-		MinecraftClient.getInstance().execute(() -> {
+		Minecraft.getInstance().execute(() -> {
 			try {
 				Object waypointSet = getCurrentWaypointSet();
 				if (waypointSet == null) {
@@ -240,7 +240,7 @@ public class XaeroIntegration {
 	}
 
 	private static String selfName() {
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client.player == null)
 			return null;
 		return client.player.getGameProfile().name();
@@ -288,7 +288,7 @@ public class XaeroIntegration {
 			managerReset = manager.getClass().getMethod("reset");
 		if (managerUpdate == null)
 			managerUpdate = manager.getClass().getMethod(
-					"update", UUID.class, double.class, double.class, double.class, RegistryKey.class);
+					"update", UUID.class, double.class, double.class, double.class, ResourceKey.class);
 		if (managerRemove == null)
 			managerRemove = manager.getClass().getMethod("remove", UUID.class);
 	}
@@ -297,11 +297,11 @@ public class XaeroIntegration {
 	 * Converts SquareMap dim key "minecraft_overworld" → RegistryKey for
 	 * minecraft:overworld.
 	 */
-	private static RegistryKey<World> dimKey(String squaremapDim) {
+	private static ResourceKey<Level> dimKey(String squaremapDim) {
 		int idx = squaremapDim.indexOf('_');
 		String id = idx < 0 ? squaremapDim
 				: squaremapDim.substring(0, idx) + ":" + squaremapDim.substring(idx + 1);
-		return RegistryKey.of(RegistryKeys.WORLD, Identifier.of(id));
+		return ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, Identifier.tryParse(id));
 	}
 
 	/** Parses a compact UUID string (no dashes) into a UUID. */

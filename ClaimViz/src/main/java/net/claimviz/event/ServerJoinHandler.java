@@ -11,8 +11,8 @@ import net.claimviz.integration.XaeroIntegration;
 import net.claimviz.map.MapScreen;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -28,8 +28,8 @@ public class ServerJoinHandler {
 
     public static void register() {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            String address = client.getCurrentServerEntry() != null
-                ? client.getCurrentServerEntry().address
+            String address = client.getCurrentServer() != null
+                ? client.getCurrentServer().ip
                 : "";
             Optional<ClaimVizConfig.ServerConfig> cfg = ConfigManager.getForServer(address);
             if (cfg.isEmpty()) {
@@ -52,7 +52,7 @@ public class ServerJoinHandler {
             XaeroIntegration.clearWaypoints();
             XaeroIntegration.clearTrackedPlayers();
             client.execute(() -> {
-                if (client.currentScreen instanceof MapScreen ms) ms.close();
+                if (client.screen instanceof MapScreen ms) ms.onClose();
             });
         });
 
@@ -75,16 +75,16 @@ public class ServerJoinHandler {
         });
     }
 
-    private static void handleKeybinds(MinecraftClient client) {
-        while (ClaimViz.TOGGLE_CLAIMS != null && ClaimViz.TOGGLE_CLAIMS.wasPressed()) {
+    private static void handleKeybinds(Minecraft client) {
+        while (ClaimViz.TOGGLE_CLAIMS != null && ClaimViz.TOGGLE_CLAIMS.consumeClick()) {
             ClaimViz.showClaims = !ClaimViz.showClaims;
             ClaimViz.CHAT.send("Claims " + (ClaimViz.showClaims ? "enabled" : "disabled"));
         }
-        while (ClaimViz.TOGGLE_PLAYERS != null && ClaimViz.TOGGLE_PLAYERS.wasPressed()) {
+        while (ClaimViz.TOGGLE_PLAYERS != null && ClaimViz.TOGGLE_PLAYERS.consumeClick()) {
             ClaimViz.showPlayers = !ClaimViz.showPlayers;
             ClaimViz.CHAT.send("Players " + (ClaimViz.showPlayers ? "enabled" : "disabled"));
         }
-        while (ClaimViz.OPEN_MAP != null && ClaimViz.OPEN_MAP.wasPressed()) {
+        while (ClaimViz.OPEN_MAP != null && ClaimViz.OPEN_MAP.consumeClick()) {
             if (activeConfig != null && lastDimension != null) {
                 client.setScreen(new MapScreen(activeConfig, lastDimension));
             } else {
@@ -93,9 +93,9 @@ public class ServerJoinHandler {
         }
     }
 
-    private static void handleDimensionChange(MinecraftClient client) {
+    private static void handleDimensionChange(Minecraft client) {
         if (activeConfig == null || client.player == null) return;
-        String dim = toDimensionKey(client.player.getEntityWorld().getRegistryKey().getValue().toString());
+        String dim = toDimensionKey(client.player.level().dimension().identifier().toString());
         if (!dim.equals(lastDimension)) {
             lastDimension = dim;
             lastInsideClaim = null; // suppress spurious "left" message on dimension change
@@ -103,7 +103,7 @@ public class ServerJoinHandler {
         }
     }
 
-    private static void handleClaimMessages(MinecraftClient client) {
+    private static void handleClaimMessages(Minecraft client) {
         var cfg = activeConfig;
         if (cfg == null || client.player == null) return;
         String dim = lastDimension;
@@ -132,7 +132,7 @@ public class ServerJoinHandler {
         // last. In chat it would be twenty lines a second.
         if (cfg.persistentClaimBar && current != null) {
             String name = client.player.getGameProfile().name();
-            client.player.sendMessage(Text.literal(persistentLabel(current, name)), true);
+            client.gui.setOverlayMessage(Component.literal(persistentLabel(current, name)), false);
         }
 
         lastInsideClaim = current;
@@ -218,9 +218,9 @@ public class ServerJoinHandler {
     /** Re-fetches activeConfig from the current config file contents. Call after saving settings in-game. */
     public static void reloadActiveConfig() {
         if (activeConfig == null) return;
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getCurrentServerEntry() == null) return;
-        ConfigManager.getForServer(client.getCurrentServerEntry().address)
+        Minecraft client = Minecraft.getInstance();
+        if (client.getCurrentServer() == null) return;
+        ConfigManager.getForServer(client.getCurrentServer().ip)
             .ifPresent(cfg -> activeConfig = cfg);
     }
 

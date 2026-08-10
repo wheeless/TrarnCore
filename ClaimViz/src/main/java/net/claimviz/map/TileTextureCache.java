@@ -1,10 +1,10 @@
 package net.claimviz.map;
 
 import net.claimviz.ClaimViz;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
 
 import java.io.ByteArrayInputStream;
 import java.util.LinkedHashMap;
@@ -52,7 +52,7 @@ public class TileTextureCache {
 
     /** Must be called on the render thread — top of every MapScreen.render(). */
     public void processUploadQueue() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         int processed = 0;
         while (processed < MAX_UPLOADS_PER_FRAME) {
             Map.Entry<TileCoord, byte[]> pending = uploadQueue.poll();
@@ -62,15 +62,15 @@ public class TileTextureCache {
             byte[] bytes = pending.getValue();
             try {
                 NativeImage img = NativeImage.read(new ByteArrayInputStream(bytes));
-                NativeImageBackedTexture tex = new NativeImageBackedTexture(() -> "claimviz:" + coord, img);
-                Identifier id = Identifier.of("claimviz",
+                DynamicTexture tex = new DynamicTexture(() -> "claimviz:" + coord, img);
+                Identifier id = Identifier.fromNamespaceAndPath("claimviz",
                     "maptile/" + coord.dimension() + "/" + coord.zoom()
                         + "/" + coord.tileX() + "_" + coord.tileZ());
-                client.getTextureManager().registerTexture(id, tex);
+                client.getTextureManager().register(id, tex);
 
                 CacheEntry old = cache.get(coord);
                 if (old != null && old.textureId() != null) {
-                    client.getTextureManager().destroyTexture(old.textureId());
+                    client.getTextureManager().release(old.textureId());
                 }
                 cache.put(coord, new CacheEntry(TileState.LOADED, id, System.currentTimeMillis()));
                 evictIfOverBudget(client);
@@ -82,13 +82,13 @@ public class TileTextureCache {
         }
     }
 
-    private void evictIfOverBudget(MinecraftClient client) {
+    private void evictIfOverBudget(Minecraft client) {
         var it = cache.entrySet().iterator();
         while (cache.size() > budget && it.hasNext()) {
             CacheEntry entry = it.next().getValue();
             it.remove();
             if (entry.textureId() != null) {
-                client.getTextureManager().destroyTexture(entry.textureId());
+                client.getTextureManager().release(entry.textureId());
             }
         }
     }
@@ -97,10 +97,10 @@ public class TileTextureCache {
     public void clear() {
         closed = true;
         uploadQueue.clear();
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         for (CacheEntry entry : cache.values()) {
             if (entry.textureId() != null) {
-                client.getTextureManager().destroyTexture(entry.textureId());
+                client.getTextureManager().release(entry.textureId());
             }
         }
         cache.clear();

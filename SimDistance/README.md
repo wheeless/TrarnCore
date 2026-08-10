@@ -45,7 +45,7 @@ quietly stalls. SimDistance draws the line so you can stay on the right side of 
 | --- | --- | --- |
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | |
+| Java 25 | Yes | |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Needed to reach the config screen |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Needed for the config screen UI |
 
@@ -74,9 +74,9 @@ later — or to overwrite something you wanted to read. Chat is a log, so severa
 ```
 
 The jar lands in `build/libs/`, and is also copied to [`../ModBuilds/`](../ModBuilds) alongside the
-other mods' output for easy installing. Requires JDK 21.
+other mods' output for easy installing. Requires JDK 25.
 
-Minecraft/Yarn/Loader/Fabric versions come from [`../versions.properties`](../versions.properties),
+Minecraft/Loader/Fabric versions come from [`../versions.properties`](../versions.properties),
 shared with the sibling mods, so a version bump is one file for all of them.
 [TrarnCore](../TrarnCore) is built from source automatically via a Gradle composite build — there is
 no publish step.
@@ -91,7 +91,7 @@ no publish step.
 ## Related mods
 
 [ClaimViz](../ClaimViz) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil)
-· [RSwitch](../RSwitch) — same Minecraft/Yarn/Fabric target, shared [TrarnCore](../TrarnCore)
+· [RSwitch](../RSwitch) — same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore)
 plumbing.
 
 ## Roadmap

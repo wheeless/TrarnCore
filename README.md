@@ -1,6 +1,6 @@
 # TrarnCore
 
-A monorepo of client-side [Fabric](https://fabricmc.net/) mods for Minecraft **1.21.11**, plus the
+A monorepo of client-side [Fabric](https://fabricmc.net/) mods for Minecraft **26.1.2**, plus the
 shared library they are all built on.
 
 Everything here is **client-side only**. No mod in this repo requires a server-side component, and
@@ -38,7 +38,7 @@ them. One copy means a Minecraft rendering change is fixed once.
 
 ## Building
 
-Requires **JDK 21**. Each project is a standalone Gradle build with its own wrapper.
+Requires **JDK 25**. Each project is a standalone Gradle build with its own wrapper.
 
 > **Build TrarnCore first on a fresh clone.** Loom inspects a `modImplementation` dependency's jar
 > at *configuration* time, before any task runs — so the library jar has to already exist on disk
@@ -80,7 +80,7 @@ startup.
 
 ## Versions
 
-Minecraft, Yarn, Loader and Fabric API versions are pinned once in
+Minecraft, Loader and Fabric API versions are pinned once in
 **[`versions.properties`](versions.properties)** and read by every project's `build.gradle`. A
 Minecraft bump is a one-file edit for the whole repo.
 
@@ -140,7 +140,7 @@ artifacts with 90-day retention.
 | --- | --- | --- |
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | Both to build and to run |
+| Java 25 | Yes | Both to build and to run |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Needed to reach any mod's config screen |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Needed for the config screen UI |
 
@@ -154,7 +154,7 @@ instance. See each mod's README.
 ```
 .
 ├─ .github/workflows/     CI and release workflows
-├─ versions.properties    Shared Minecraft/Yarn/Loader/Fabric pins
+├─ versions.properties    Shared Minecraft/Loader/Fabric pins
 ├─ ModBuilds/             Built jars, collected from every mod (generated)
 ├─ TrarnCore/             Shared library, bundled into each mod
 ├─ ClaimViz/

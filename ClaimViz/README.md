@@ -59,7 +59,7 @@ All rebindable under **Options → Controls → ClaimViz**.
 |---|---|---|
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | |
+| Java 25 | Yes | |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Required to access the config screen in-game |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Required for the config screen UI |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | Optional | Enables player radar and claim waypoints |
@@ -131,13 +131,13 @@ Requires Java 21 (tested with Eclipse Temurin 21).
 
 The jar lands in `build/libs/`, and is also copied to [`../ModBuilds/`](../ModBuilds) alongside the other mods' output for easy installing.
 
-Minecraft/Yarn/Loader/Fabric versions come from [`../versions.properties`](../versions.properties), shared with the sibling mods, so a version bump is one file for all of them. [TrarnCore](../TrarnCore) is built from source automatically via a Gradle composite build - there is no publish step.
+Minecraft/Loader/Fabric versions come from [`../versions.properties`](../versions.properties), shared with the sibling mods, so a version bump is one file for all of them. [TrarnCore](../TrarnCore) is built from source automatically via a Gradle composite build - there is no publish step.
 
 ---
 
 ## Related mods
 
-[SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) - same Minecraft/Yarn/Fabric target, shared [TrarnCore](../TrarnCore) plumbing.
+[SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) - same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore) plumbing.
 
 ---
 

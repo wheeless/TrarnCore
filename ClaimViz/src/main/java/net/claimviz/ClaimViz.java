@@ -5,11 +5,11 @@ import net.claimviz.event.ServerJoinHandler;
 import net.claimviz.render.ClaimRenderer;
 import net.claimviz.render.PlayerRenderer;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
@@ -21,11 +21,11 @@ public class ClaimViz implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** One colour per sibling mod so prefixes stay distinguishable in a shared chat log. */
-    public static final ChatChannel CHAT = ChatChannel.of("ClaimViz", Formatting.LIGHT_PURPLE);
+    public static final ChatChannel CHAT = ChatChannel.of("ClaimViz", ChatFormatting.LIGHT_PURPLE);
 
-    public static KeyBinding TOGGLE_CLAIMS;
-    public static KeyBinding TOGGLE_PLAYERS;
-    public static KeyBinding OPEN_MAP;
+    public static KeyMapping TOGGLE_CLAIMS;
+    public static KeyMapping TOGGLE_PLAYERS;
+    public static KeyMapping OPEN_MAP;
 
     public static volatile boolean showClaims = true;
     public static volatile boolean showPlayers = true;
@@ -34,23 +34,23 @@ public class ClaimViz implements ClientModInitializer {
     public void onInitializeClient() {
         ConfigManager.load();
 
-        KeyBinding.Category category = KeyBinding.Category.MISC;
+        KeyMapping.Category category = KeyMapping.Category.MISC;
 
-        TOGGLE_CLAIMS = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        TOGGLE_CLAIMS = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.claimviz.toggle_claims",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_V,
             category
         ));
-        TOGGLE_PLAYERS = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        TOGGLE_PLAYERS = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.claimviz.toggle_players",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
             category
         ));
-        OPEN_MAP = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        OPEN_MAP = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.claimviz.open_map",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_M,
             category
         ));
