@@ -1,10 +1,10 @@
 package net.trarncore.render;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix4f;
 
 /**
@@ -28,35 +28,35 @@ public final class WorldText {
      * @param camX camera position, subtracted to put the label in view space
      * @param argb label colour, alpha included
      */
-    public static void draw(MatrixStack matrices, VertexConsumerProvider consumers,
-                            TextRenderer textRenderer, Camera camera, Text text,
+    public static void draw(PoseStack matrices, MultiBufferSource consumers,
+                            Font font, Camera camera, Component text,
                             double wx, double wy, double wz,
                             double camX, double camY, double camZ,
                             int argb, float scale, boolean seeThrough) {
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(wx - camX, wy - camY, wz - camZ);
-        matrices.multiply(camera.getRotation());
+        matrices.mulPose(camera.rotation());
         // The negative scale is not a typo: Minecraft's text is authored y-down, so after the
         // billboard rotation both axes have to be flipped for the label to come out upright and
         // the right way round.
         matrices.scale(-scale, -scale, scale);
 
-        Matrix4f mat = matrices.peek().getPositionMatrix();
-        float halfWidth = -textRenderer.getWidth(text) / 2f;
-        textRenderer.draw(text, halfWidth, 0f, argb, false, mat, consumers,
-            seeThrough ? TextRenderer.TextLayerType.SEE_THROUGH : TextRenderer.TextLayerType.NORMAL,
+        Matrix4f mat = matrices.last().pose();
+        float halfWidth = -font.width(text) / 2f;
+        font.drawInBatch(text, halfWidth, 0f, argb, false, mat, consumers,
+            seeThrough ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL,
             0x50000000, 0xF000F0);
 
-        matrices.pop();
+        matrices.popPose();
     }
 
     /** Convenience overload using {@link #DEFAULT_SCALE}. */
-    public static void draw(MatrixStack matrices, VertexConsumerProvider consumers,
-                            TextRenderer textRenderer, Camera camera, Text text,
+    public static void draw(PoseStack matrices, MultiBufferSource consumers,
+                            Font font, Camera camera, Component text,
                             double wx, double wy, double wz,
                             double camX, double camY, double camZ,
                             int argb, boolean seeThrough) {
-        draw(matrices, consumers, textRenderer, camera, text, wx, wy, wz,
+        draw(matrices, consumers, font, camera, text, wx, wy, wz,
             camX, camY, camZ, argb, DEFAULT_SCALE, seeThrough);
     }
 }

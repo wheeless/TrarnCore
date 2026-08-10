@@ -1,17 +1,17 @@
 package net.containerutil.container;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.CopperChestBlock;
-import net.minecraft.block.ShelfBlock;
-import net.minecraft.block.ShulkerBoxBlock;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.AbstractDonkeyEntity;
-import net.minecraft.entity.vehicle.AbstractChestBoatEntity;
-import net.minecraft.entity.vehicle.ChestMinecartEntity;
-import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
-import net.minecraft.entity.vehicle.HopperMinecartEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CopperChestBlock;
+import net.minecraft.world.level.block.ShelfBlock;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.equine.AbstractChestedHorse;
+import net.minecraft.world.entity.vehicle.boat.AbstractChestBoat;
+import net.minecraft.world.entity.vehicle.minecart.MinecartChest;
+import net.minecraft.world.entity.vehicle.minecart.MinecartFurnace;
+import net.minecraft.world.entity.vehicle.minecart.MinecartHopper;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -173,12 +173,12 @@ public enum ContainerKind {
     /** Returns the kind for an entity, or {@code null} if it is not a container we track. */
     public static ContainerKind fromEntity(Entity entity) {
         if (entity == null) return null;
-        if (entity instanceof ChestMinecartEntity) return CHEST_MINECART;
-        if (entity instanceof HopperMinecartEntity) return HOPPER_MINECART;
-        if (entity instanceof FurnaceMinecartEntity) return FURNACE_MINECART;
-        if (entity instanceof AbstractChestBoatEntity) return CHEST_BOAT;
+        if (entity instanceof MinecartChest) return CHEST_MINECART;
+        if (entity instanceof MinecartHopper) return HOPPER_MINECART;
+        if (entity instanceof MinecartFurnace) return FURNACE_MINECART;
+        if (entity instanceof AbstractChestBoat) return CHEST_BOAT;
         // Donkeys, mules, llamas and trader llamas — only once they are actually wearing a chest.
-        if (entity instanceof AbstractDonkeyEntity donkey && donkey.hasChest()) return CHESTED_ANIMAL;
+        if (entity instanceof AbstractChestedHorse donkey && donkey.hasChest()) return CHESTED_ANIMAL;
         return null;
     }
 

@@ -1,6 +1,6 @@
 package net.trustui.integration;
 
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 import net.trarncore.integration.ClothModMenuIntegration;
 import net.trustui.config.TrustUIConfigScreen;
 

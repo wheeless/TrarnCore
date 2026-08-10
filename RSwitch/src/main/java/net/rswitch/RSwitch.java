@@ -1,8 +1,8 @@
 package net.rswitch;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.ChatFormatting;
 import net.rswitch.config.ConfigManager;
 import net.rswitch.event.ClientTickHandler;
 import net.trarncore.chat.ChatChannel;
@@ -18,16 +18,16 @@ public class RSwitch implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Green — one colour per sibling mod so prefixes stay distinguishable in a shared chat log. */
-    public static final ChatChannel CHAT = ChatChannel.of("RSwitch", Formatting.GREEN);
+    public static final ChatChannel CHAT = ChatChannel.of("RSwitch", ChatFormatting.GREEN);
 
-    public static KeyBinding SWAP;
+    public static KeyMapping SWAP;
 
     @Override
     public void onInitializeClient() {
         ConfigManager.load();
 
         // R is unbound in vanilla, so this is a free key on a default setup.
-        SWAP = Keys.register("key.rswitch.swap", GLFW.GLFW_KEY_R, KeyBinding.Category.INVENTORY);
+        SWAP = Keys.register("key.rswitch.swap", GLFW.GLFW_KEY_R, KeyMapping.Category.INVENTORY);
 
         ClientTickHandler.register();
 

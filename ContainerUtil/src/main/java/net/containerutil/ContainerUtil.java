@@ -7,8 +7,8 @@ import net.containerutil.event.WorldJoinHandler;
 import net.containerutil.render.ContainerEspRenderer;
 import net.containerutil.render.HudRenderer;
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.input.Keys;
 import net.trarncore.update.UpdateChecker;
@@ -22,11 +22,11 @@ public class ContainerUtil implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Dark aqua — one colour per sibling mod so prefixes stay distinguishable in a shared chat log. */
-    public static final ChatChannel CHAT = ChatChannel.of("ContainerUtil", Formatting.DARK_AQUA);
+    public static final ChatChannel CHAT = ChatChannel.of("ContainerUtil", ChatFormatting.DARK_AQUA);
 
-    public static KeyBinding TOGGLE_HIGHLIGHTS;
-    public static KeyBinding OPEN_SEARCH;
-    public static KeyBinding CLEAR_TRACK;
+    public static KeyMapping TOGGLE_HIGHLIGHTS;
+    public static KeyMapping OPEN_SEARCH;
+    public static KeyMapping CLEAR_TRACK;
 
     /** In-memory mirror of {@code config.enabled}; the render loop reads this every frame. */
     public static volatile boolean enabled = true;
@@ -40,15 +40,15 @@ public class ContainerUtil implements ClientModInitializer {
         // slots, and a toggle that also swaps your held item every time you press it is a
         // bug report waiting to happen. Rebindable in Options → Controls.
         TOGGLE_HIGHLIGHTS = Keys.register(
-            "key.containerutil.toggle", GLFW.GLFW_KEY_KP_3, KeyBinding.Category.MISC);
+            "key.containerutil.toggle", GLFW.GLFW_KEY_KP_3, KeyMapping.Category.MISC);
 
         // Unbound by default — the search screen is a deliberate action, and picking a default
         // key here would collide with something on most people's setups.
         OPEN_SEARCH = Keys.register(
-            "key.containerutil.search", Keys.UNBOUND, KeyBinding.Category.MISC);
+            "key.containerutil.search", Keys.UNBOUND, KeyMapping.Category.MISC);
 
         CLEAR_TRACK = Keys.register(
-            "key.containerutil.clear_track", Keys.UNBOUND, KeyBinding.Category.MISC);
+            "key.containerutil.clear_track", Keys.UNBOUND, KeyMapping.Category.MISC);
 
         ContentCapture.register();
         WorldJoinHandler.register();

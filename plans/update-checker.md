@@ -38,7 +38,7 @@ Unauthenticated, that is 60 requests/hour per IP — a single call on startup is
 Tempting to read versions out of tag names, but the tag scheme has two shapes
 (`containerutil-v0.1.0` and `all-v0.1.0`), and a bundle tag encodes no per-mod version at all.
 
-The **attached asset filenames do**: `containerutil-0.1.0.jar`, `claimviz-0.0.6.jar`. Parsing
+The **attached asset filenames do**: `containerutil-0.2.0.jar`, `claimviz-0.2.0.jar`. Parsing
 `<archives_base_name>-<version>.jar` out of each release's assets works identically for both tag
 shapes and needs no knowledge of the tagging convention. Take the highest version seen per mod id.
 

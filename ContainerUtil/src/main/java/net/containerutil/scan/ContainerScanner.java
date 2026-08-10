@@ -9,17 +9,17 @@ import net.containerutil.data.ContainerIndex;
 import net.containerutil.data.ContainerRecord;
 import net.containerutil.data.IndexManager;
 import net.containerutil.data.WorldIdentity;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.enums.ChestType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.properties.ChestType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.Container;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,9 +60,9 @@ public class ContainerScanner {
     private static int sweepCursor = 0;
     private static int tickCounter = 0;
 
-    public static void tick(MinecraftClient client) {
+    public static void tick(Minecraft client) {
         if (!IndexManager.isActive()) return;
-        if (client.world == null || client.player == null) return;
+        if (client.level == null || client.player == null) return;
 
         ContainerUtilConfig config = ConfigManager.get();
         tickCounter++;
@@ -85,8 +85,8 @@ public class ContainerScanner {
 
     // ── Block sweep ──────────────────────────────────────────────────────────
 
-    private static void scanBlockSlice(MinecraftClient client, ContainerUtilConfig config) {
-        ClientWorld world = client.world;
+    private static void scanBlockSlice(Minecraft client, ContainerUtilConfig config) {
+        ClientLevel world = client.level;
         String dim = WorldIdentity.currentDimension();
         if (dim == null) return;
 
@@ -94,7 +94,7 @@ public class ContainerScanner {
         // different questions: turning the highlight distance down for frame rate should not also
         // stop the mod learning about your base. Chunks outside the loaded area simply come back
         // null below, so overshooting costs nothing but a few wasted iterations.
-        int radius = Math.max(config.renderChunkRadius, client.options.getClampedViewDistance());
+        int radius = Math.max(config.renderChunkRadius, client.options.getEffectiveRenderDistance());
         int side = radius * 2 + 1;
         int totalChunks = side * side;
 
@@ -117,7 +117,7 @@ public class ContainerScanner {
             int chunkX = playerChunkX - radius + (slot % side);
             int chunkZ = playerChunkZ - radius + (slot / side);
 
-            WorldChunk chunk = world.getChunkManager().getWorldChunk(chunkX, chunkZ);
+            LevelChunk chunk = world.getChunkSource().getChunk(chunkX, chunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
             if (chunk == null) continue;
 
             for (var entry : chunk.getBlockEntities().entrySet()) {
@@ -132,7 +132,7 @@ public class ContainerScanner {
                 ContainerRecord record = recordBlockContainer(index, dim, pos, state, kind);
 
                 // Screenless containers we can just read — see ContainerKind#hasClientVisibleContents.
-                if (record != null && kind.hasClientVisibleContents() && blockEntity instanceof Inventory inventory) {
+                if (record != null && kind.hasClientVisibleContents() && blockEntity instanceof Container inventory) {
                     captureVisibleContents(index, record, inventory);
                 }
             }
@@ -144,7 +144,7 @@ public class ContainerScanner {
      * changed — this runs on every sweep, and unconditional writes would keep the index
      * permanently dirty and defeat the debounced autosave.
      */
-    private static void captureVisibleContents(ContainerIndex index, ContainerRecord record, Inventory inventory) {
+    private static void captureVisibleContents(ContainerIndex index, ContainerRecord record, Container inventory) {
         ContentCapture.Snapshot snapshot = ContentCapture.snapshotInventory(inventory);
         if (record.lastScanned != 0
             && record.usedSlots == snapshot.usedSlots()
@@ -187,29 +187,29 @@ public class ContainerScanner {
     /** The far half of a double chest, or {@code null} for a single chest or any other block. */
     public static BlockPos doubleChestPartner(BlockState state, BlockPos pos) {
         if (!(state.getBlock() instanceof ChestBlock)) return null;
-        if (!state.contains(ChestBlock.CHEST_TYPE)) return null;
+        if (!state.hasProperty(ChestBlock.TYPE)) return null;
 
-        ChestType type = state.get(ChestBlock.CHEST_TYPE);
+        ChestType type = state.getValue(ChestBlock.TYPE);
         if (type == ChestType.SINGLE) return null;
 
-        Direction facing = state.get(ChestBlock.FACING);
+        Direction facing = state.getValue(ChestBlock.FACING);
         Direction toPartner = type == ChestType.LEFT
-            ? facing.rotateYClockwise()
-            : facing.rotateYCounterclockwise();
-        return pos.offset(toPartner);
+            ? facing.getClockWise()
+            : facing.getCounterClockWise();
+        return pos.relative(toPartner);
     }
 
     // ── Entity sweep ─────────────────────────────────────────────────────────
 
-    private static void scanEntities(MinecraftClient client) {
+    private static void scanEntities(Minecraft client) {
         String dim = WorldIdentity.currentDimension();
         if (dim == null) return;
 
         ContainerIndex index = IndexManager.index();
-        for (Entity entity : client.world.getEntities()) {
+        for (Entity entity : client.level.entitiesForRendering()) {
             ContainerKind kind = ContainerKind.fromEntity(entity);
             if (kind == null) continue;
-            index.upsertEntitySighting(kind, dim, entity.getUuidAsString(),
+            index.upsertEntitySighting(kind, dim, entity.getStringUUID(),
                 (int) Math.floor(entity.getX()),
                 (int) Math.floor(entity.getY()),
                 (int) Math.floor(entity.getZ()));
@@ -226,8 +226,8 @@ public class ContainerScanner {
      * recorded. An unloaded chunk reads as air, and treating that as "deleted" would quietly
      * erase the index every time you walked past the edge of render distance.
      */
-    private static void pruneNearby(MinecraftClient client, ContainerUtilConfig config) {
-        ClientWorld world = client.world;
+    private static void pruneNearby(Minecraft client, ContainerUtilConfig config) {
+        ClientLevel world = client.level;
         String dim = WorldIdentity.currentDimension();
         if (dim == null) return;
 
@@ -248,7 +248,7 @@ public class ContainerScanner {
 
             BlockPos pos = new BlockPos(record.x, record.y, record.z);
             // Only trust the reading if the chunk is actually loaded.
-            if (world.getChunkManager().getWorldChunk(pos.getX() >> 4, pos.getZ() >> 4) == null) continue;
+            if (world.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false) == null) continue;
 
             ContainerKind actual = ContainerKind.fromBlockState(world.getBlockState(pos));
             if (actual == null) {

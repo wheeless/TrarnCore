@@ -1,11 +1,11 @@
 package net.easyportallinker.portal;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -28,12 +28,12 @@ public final class PortalScan {
      * @param start     any portal block belonging to the portal
      * @return a populated {@link PortalTarget}, or {@code null} if {@code start} is not a portal block
      */
-    public static PortalTarget scan(World world, BlockPos start) {
+    public static PortalTarget scan(Level world, BlockPos start) {
         BlockState startState = world.getBlockState(start);
-        if (!startState.isOf(Blocks.NETHER_PORTAL)) return null;
+        if (startState.getBlock() != Blocks.NETHER_PORTAL) return null;
 
-        Direction.Axis axis = startState.contains(Properties.HORIZONTAL_AXIS)
-            ? startState.get(Properties.HORIZONTAL_AXIS)
+        Direction.Axis axis = startState.hasProperty(BlockStateProperties.HORIZONTAL_AXIS)
+            ? startState.getValue(BlockStateProperties.HORIZONTAL_AXIS)
             : Direction.Axis.X;
 
         int minX = start.getX(), minY = start.getY(), minZ = start.getZ();
@@ -57,9 +57,9 @@ public final class PortalScan {
             maxZ = Math.max(maxZ, pos.getZ());
 
             for (Direction dir : Direction.values()) {
-                BlockPos next = pos.offset(dir);
+                BlockPos next = pos.relative(dir);
                 if (!visited.contains(next.asLong())
-                        && world.getBlockState(next).isOf(Blocks.NETHER_PORTAL)) {
+                        && world.getBlockState(next).getBlock() == Blocks.NETHER_PORTAL) {
                     visited.add(next.asLong());
                     queue.add(next);
                 }
@@ -67,7 +67,7 @@ public final class PortalScan {
         }
 
         PortalTarget t = new PortalTarget();
-        t.sourceDim = world.getRegistryKey().getValue().toString();
+        t.sourceDim = world.dimension().identifier().toString();
         t.sourceX = minX;
         t.sourceY = minY;
         t.sourceZ = minZ;

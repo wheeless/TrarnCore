@@ -1,11 +1,11 @@
 package net.rswitch.event;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.rswitch.RSwitch;
 import net.rswitch.config.ConfigManager;
 import net.rswitch.config.RSwitchConfig;
@@ -20,7 +20,7 @@ public class ClientTickHandler {
             Guarded.run(RSwitch.LOGGER, "RSwitch keybind handler", () -> handleKeybinds(client)));
     }
 
-    private static void handleKeybinds(MinecraftClient client) {
+    private static void handleKeybinds(Minecraft client) {
         Keys.whenPressed(RSwitch.SWAP, () -> {
             RSwitchConfig config = ConfigManager.get();
             if (!config.enabled) return;
@@ -32,10 +32,10 @@ public class ClientTickHandler {
                 client.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.25f, 1.8f);
             }
             if (config.showChatMessage && client.player != null) {
-                ItemStack held = client.player.getInventory().getSelectedStack();
+                ItemStack held = client.player.getInventory().getSelectedItem();
                 RSwitch.CHAT.send(held.isEmpty()
-                    ? Text.literal("Hand cleared").formatted(Formatting.GRAY)
-                    : held.getName().copy());
+                    ? Component.literal("Hand cleared").withStyle(ChatFormatting.GRAY)
+                    : held.getHoverName().copy());
             }
         });
     }

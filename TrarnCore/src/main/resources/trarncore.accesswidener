@@ -1,13 +1,16 @@
-accessWidener	v2	named
+accessWidener	v2	official
 
-# RenderLayer.of is package-private and RenderLayer has no public constructor, so there is no
+# RenderType.create is package-private and RenderType has no public constructor, so there is no
 # vanilla or Fabric API path to a custom render layer. TrarnCore needs one: drawing highlights
-# through terrain requires a pipeline with DepthTestFunction.NO_DEPTH_TEST, and no vanilla layer
-# combines that with a lines or quads vertex format.
+# through terrain requires a pipeline whose depth test always passes, and no vanilla layer combines
+# that with a lines or quads vertex format.
 #
-# Declaring it here means it is opened once for the whole family rather than per mod — consuming
-# mods call Layers.seeThroughLines() and never touch RenderLayer.of themselves.
+# Declaring it here opens it once for the whole family — consuming mods call Layers.seeThroughLines()
+# and never touch RenderType.create themselves.
 #
-# Unlike a mixin this changes no behaviour. If the signature moves in a future Minecraft version
-# the build fails loudly, which is the failure mode we want.
-accessible	method	net/minecraft/client/render/RenderLayer	of	(Ljava/lang/String;Lnet/minecraft/client/render/RenderSetup;)Lnet/minecraft/client/render/RenderLayer;
+# Minecraft 26.x ships unobfuscated, so this is written in Mojang's own names; there is no
+# intermediary to remap through. In 1.21.11 this same entry named RenderLayer.of instead.
+#
+# Note that RenderLayer still exists in 26.x as net/minecraft/client/renderer/entity/layers/RenderLayer,
+# which is an entity feature layer and an entirely unrelated thing. RenderType is what we want.
+accessible	method	net/minecraft/client/renderer/rendertype/RenderType	create	(Ljava/lang/String;Lnet/minecraft/client/renderer/rendertype/RenderSetup;)Lnet/minecraft/client/renderer/rendertype/RenderType;

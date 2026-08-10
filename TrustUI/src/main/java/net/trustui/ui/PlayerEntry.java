@@ -1,6 +1,6 @@
 package net.trustui.ui;
 
-import net.minecraft.entity.player.SkinTextures;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.trustui.trust.TrustLevel;
 
 import java.util.EnumSet;
@@ -15,11 +15,11 @@ import java.util.EnumSet;
 public final class PlayerEntry {
 
     private final String name;
-    private final SkinTextures skin;
+    private final PlayerSkin skin;
     private final boolean online;
     private EnumSet<TrustLevel> trust;
 
-    public PlayerEntry(String name, SkinTextures skin, boolean online, EnumSet<TrustLevel> trust) {
+    public PlayerEntry(String name, PlayerSkin skin, boolean online, EnumSet<TrustLevel> trust) {
         this.name = name;
         this.skin = skin;
         this.online = online;
@@ -30,7 +30,7 @@ public final class PlayerEntry {
         return name;
     }
 
-    public SkinTextures skin() {
+    public PlayerSkin skin() {
         return skin;
     }
 

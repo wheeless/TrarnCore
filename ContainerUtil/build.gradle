@@ -1,5 +1,7 @@
 plugins {
-    id 'fabric-loom' version '1.17-SNAPSHOT'
+    // Minecraft 26.x is unobfuscated, so nothing is remapped — hence the no-remap Loom
+    // variant. The fully-qualified plugin id is required; the short form does not resolve.
+    id 'net.fabricmc.fabric-loom-no-remap' version '1.14.0-alpha.31'
     id 'maven-publish'
 }
 
@@ -23,6 +25,13 @@ base {
 // No accessWidener here — TrarnCore declares the one we need (RenderLayer.of) and Fabric applies
 // access wideners from nested jars, so it is opened once for the whole family.
 
+loom {
+    // No intermediary exists for 26.x — the jar already carries its real names.
+    noIntermediateMappings()
+    // Fabric API ships transitive access wideners that do not apply to the unobfuscated jar.
+    enableTransitiveAccessWideners = false
+}
+
 repositories {
     maven {
         name = "Modrinth"
@@ -37,17 +46,16 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${pin('minecraft_version')}"
-    mappings "net.fabricmc:yarn:${pin('yarn_mappings')}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${pin('loader_version')}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${pin('fabric_version')}"
+    implementation "net.fabricmc:fabric-loader:${pin('loader_version')}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${pin('fabric_version')}"
 
     // Shared plumbing, bundled into this mod's jar so nobody installs it separately.
-    modImplementation "net.trarncore:trarncore:${pin('trarncore_version')}"
+    implementation "net.trarncore:trarncore:${pin('trarncore_version')}"
     include "net.trarncore:trarncore:${pin('trarncore_version')}"
 
     // Soft dependencies — compile against but do not bundle or require at runtime
-    modCompileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
-    modCompileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
+    compileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
+    compileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
 
     // Cloth's colour-picker entry has overloads typed on me.shedaniel.math.Color, so javac needs
     // that class on the classpath to resolve *any* startColorField call — including the plain-int
@@ -65,12 +73,12 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 21
+    it.options.release = 25
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
     withSourcesJar()
 }
@@ -89,7 +97,7 @@ jar {
 def modBuildsDir = rootProject.file("../ModBuilds")
 
 tasks.register('exportJar') {
-    dependsOn tasks.named('remapJar')
+    dependsOn tasks.named('jar')
     doLast {
         modBuildsDir.mkdirs()
         def base = project.archives_base_name
@@ -99,7 +107,7 @@ tasks.register('exportJar') {
             }
         }
         copy {
-            from tasks.named('remapJar').get().archiveFile
+            from tasks.named('jar').get().archiveFile
             into modBuildsDir
         }
         logger.lifecycle("exported ${base} -> ${modBuildsDir}")

@@ -1,9 +1,9 @@
 package net.easyportallinker;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.easyportallinker.config.ConfigManager;
 import net.easyportallinker.event.ClientTickHandler;
 import net.easyportallinker.event.SelectionHandler;
@@ -11,7 +11,7 @@ import net.easyportallinker.portal.PortalTarget;
 import net.easyportallinker.render.HudRenderer;
 import net.easyportallinker.render.PortalLinkRenderer;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
@@ -23,11 +23,11 @@ public class EasyPortalLinker implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** One colour per sibling mod so prefixes stay distinguishable in a shared chat log. */
-    public static final ChatChannel CHAT = ChatChannel.of("EasyPortalLinker", Formatting.GOLD);
+    public static final ChatChannel CHAT = ChatChannel.of("EasyPortalLinker", ChatFormatting.GOLD);
 
-    public static KeyBinding TOGGLE_OVERLAY;
-    public static KeyBinding CLEAR_SELECTION;
-    public static KeyBinding LOCK_TARGET_Y;
+    public static KeyMapping TOGGLE_OVERLAY;
+    public static KeyMapping CLEAR_SELECTION;
+    public static KeyMapping LOCK_TARGET_Y;
 
     /** In-memory mirror of {@code config.enabled}; the render loop reads this every frame. */
     public static volatile boolean enabled = true;
@@ -41,25 +41,25 @@ public class EasyPortalLinker implements ClientModInitializer {
         enabled = ConfigManager.get().enabled;
         selection = ConfigManager.get().selection;
 
-        TOGGLE_OVERLAY = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        TOGGLE_OVERLAY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.easyportallinker.toggle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
         // Unbound by default so it never clashes; bind it in Options → Controls if you want it.
-        CLEAR_SELECTION = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        CLEAR_SELECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.easyportallinker.clear",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_UNKNOWN,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
         // Press to lock the target Y to your current level; sneak + press to unlock. Rebindable.
-        LOCK_TARGET_Y = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        LOCK_TARGET_Y = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.easyportallinker.lockcurrenty",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_K,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
 
         ClientTickHandler.register();

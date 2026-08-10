@@ -7,11 +7,11 @@ import net.claimviz.data.ClaimRect;
 import net.claimviz.data.PlayerData;
 import net.claimviz.data.PlayerFetcher;
 import net.claimviz.event.ServerJoinHandler;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public class MapScreen extends Screen {
 
@@ -38,7 +38,7 @@ public class MapScreen extends Screen {
     private int refetchCountThisSecond = 0;
 
     public MapScreen(ClaimVizConfig.ServerConfig config, String dimension) {
-        super(Text.literal("ClaimViz Map"));
+        super(Component.literal("ClaimViz Map"));
         this.config = config;
         this.dimension = dimension;
         this.fetcher = new TileFetcher();
@@ -47,7 +47,7 @@ public class MapScreen extends Screen {
 
     @Override
     public void init() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             centerX = client.player.getX();
             centerZ = client.player.getZ();
@@ -56,7 +56,7 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         texCache.processUploadQueue();
 
         // Handle dimension change while map is open
@@ -64,7 +64,7 @@ public class MapScreen extends Screen {
         if (currentDim != null && !currentDim.equals(dimension)) {
             dimension = currentDim;
             texCache.clear();
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
                 centerX = client.player.getX();
                 centerZ = client.player.getZ();
@@ -111,8 +111,11 @@ public class MapScreen extends Screen {
                         case LOADING -> drawCheckerboard(context, sx, sz, tilePx, (tx + tz) % 2 == 0);
                         case MISSING -> context.fill(sx, sz, sx + tilePx, sz + tilePx, COLOR_MISSING);
                         case LOADED -> {
-                            context.drawTexturedQuad(entry.textureId(),
-                                sx, sz, sx + tilePx, sz + tilePx, 0f, 1f, 0f, 1f);
+                            // blit now takes pixel coords: x, y, u, v, destW, destH, srcW, srcH, texW, texH.
+                            // SquareMap tiles are always 512x512 and drawn 1:1 at tilePx.
+                            context.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, entry.textureId(),
+                                sx, sz, 0f, 0f, tilePx, tilePx,
+                                TILE_IMG_SIZE, TILE_IMG_SIZE, TILE_IMG_SIZE, TILE_IMG_SIZE);
                             // Queue re-fetch if TTL expired and we haven't hit the stagger limit
                             if (config.mapTileRefreshSeconds > 0
                                     && refetchCountThisSecond < MAX_REFETCH_PER_SECOND
@@ -137,14 +140,14 @@ public class MapScreen extends Screen {
         if (hovered != null) drawClaimTooltip(context, hovered, mouseX, mouseY);
     }
 
-    private void drawCheckerboard(DrawContext context, int sx, int sz, int tilePx, boolean dark) {
+    private void drawCheckerboard(GuiGraphicsExtractor context, int sx, int sz, int tilePx, boolean dark) {
         context.fill(sx, sz, sx + tilePx, sz + tilePx, dark ? COLOR_LOADING_A : COLOR_LOADING_B);
     }
 
-    private void drawOverlays(DrawContext context, double pixelsPerBlock, ClaimRect hovered) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void drawOverlays(GuiGraphicsExtractor context, double pixelsPerBlock, ClaimRect hovered) {
+        Minecraft client = Minecraft.getInstance();
         String playerName = client.player != null ? client.player.getGameProfile().name() : "";
-        String selfUuid   = client.player != null ? client.player.getUuidAsString().replace("-", "") : "";
+        String selfUuid   = client.player != null ? client.player.getStringUUID().replace("-", "") : "";
         double selfX = client.player != null ? client.player.getX() : 0;
         double selfZ = client.player != null ? client.player.getZ() : 0;
         double renderDistSq = (double) config.playerRenderDistance * config.playerRenderDistance;
@@ -183,7 +186,7 @@ public class MapScreen extends Screen {
             int px = blockToScreenX(pd.x(), pixelsPerBlock);
             int pz = blockToScreenZ(pd.z(), pixelsPerBlock);
             context.fill(px - 2, pz - 2, px + 2, pz + 2, 0xFFFF5555);
-            context.drawText(client.textRenderer, pd.name(), px + 4, pz - 4, 0xFFFFFFFF, true);
+            context.text(client.font, pd.name(), px + 4, pz - 4, 0xFFFFFFFF, true);
         }
 
         // ── Self — always drawn from local position for accuracy ───────────────
@@ -191,33 +194,33 @@ public class MapScreen extends Screen {
             int px = blockToScreenX(client.player.getX(), pixelsPerBlock);
             int pz = blockToScreenZ(client.player.getZ(), pixelsPerBlock);
             context.fill(px - 3, pz - 3, px + 3, pz + 3, 0xFFFFFF00);
-            context.drawText(client.textRenderer, "You", px + 5, pz - 4, 0xFFFFFF00, true);
+            context.text(client.font, "You", px + 5, pz - 4, 0xFFFFFF00, true);
         }
     }
 
-    private void drawHud(DrawContext context, int mouseX, int mouseY) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void drawHud(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        Minecraft client = Minecraft.getInstance();
         double bpp = 1 << (3 - zoom);
 
         // Dimension + zoom (top-left)
         String dimLabel = dimension + "  [z" + zoom + "]";
-        context.drawText(client.textRenderer, dimLabel, 4, 4, 0xFFCCCCCC, true);
+        context.text(client.font, dimLabel, 4, 4, 0xFFCCCCCC, true);
 
         // Cursor block coordinates (top-right)
         int cursorBX = (int) Math.floor(centerX + (mouseX - width  / 2.0) * bpp);
         int cursorBZ = (int) Math.floor(centerZ + (mouseY - height / 2.0) * bpp);
         String coords = cursorBX + ", " + cursorBZ;
-        int tw = client.textRenderer.getWidth(coords);
-        context.drawText(client.textRenderer, coords, width - tw - 4, 4, 0xFFCCCCCC, true);
+        int tw = client.font.width(coords);
+        context.text(client.font, coords, width - tw - 4, 4, 0xFFCCCCCC, true);
 
         // Controls hint (bottom-center)
         String hint = "[Drag] Pan   [Scroll] Zoom   [Esc] Close";
-        int hw = client.textRenderer.getWidth(hint);
-        context.drawText(client.textRenderer, hint, (width - hw) / 2, height - 12, 0xFF888888, true);
+        int hw = client.font.width(hint);
+        context.text(client.font, hint, (width - hw) / 2, height - 12, 0xFF888888, true);
     }
 
     @Override
-    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent click, double deltaX, double deltaY) {
         double bpp = 1 << (3 - zoom);
         centerX -= deltaX * bpp;
         centerZ -= deltaY * bpp;
@@ -239,7 +242,7 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
@@ -294,11 +297,11 @@ public class MapScreen extends Screen {
         return null;
     }
 
-    private void drawClaimTooltip(DrawContext context, ClaimRect claim, int mouseX, int mouseY) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void drawClaimTooltip(GuiGraphicsExtractor context, ClaimRect claim, int mouseX, int mouseY) {
+        Minecraft client = Minecraft.getInstance();
         String ownerLine = "Administrator".equals(claim.owner()) ? "Admin Claim" : claim.owner() + "'s Claim";
         String sizeLine  = (claim.maxX() - claim.minX()) + " × " + (claim.maxZ() - claim.minZ()) + " blocks";
-        int tw = Math.max(client.textRenderer.getWidth(ownerLine), client.textRenderer.getWidth(sizeLine));
+        int tw = Math.max(client.font.width(ownerLine), client.font.width(sizeLine));
         int boxW = tw + 10;
         int boxH = 25;
         int tx = mouseX + 14;
@@ -310,8 +313,8 @@ public class MapScreen extends Screen {
         context.fill(tx - 3, tz - 3, tx + boxW + 3, tz + boxH + 3, 0xBF0A0A12);
         context.fill(tx - 2, tz - 2, tx + boxW + 2, tz + boxH + 2, 0xBF23233A);
         context.fill(tx - 1, tz - 1, tx + boxW + 1, tz + boxH + 1, 0xCC0A0A12);
-        context.drawText(client.textRenderer, ownerLine, tx, tz + 3,  0xFFFFFFFF, false);
-        context.drawText(client.textRenderer, sizeLine,  tx, tz + 14, 0xFF888899, false);
+        context.text(client.font, ownerLine, tx, tz + 3,  0xFFFFFFFF, false);
+        context.text(client.font, sizeLine,  tx, tz + 14, 0xFF888899, false);
     }
 
     private static int claimColor(ClaimRect claim, String playerName) {

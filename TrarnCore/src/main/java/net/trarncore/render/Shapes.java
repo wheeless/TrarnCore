@@ -1,11 +1,11 @@
 package net.trarncore.render;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
 import org.joml.Matrix4f;
 
 /**
@@ -39,7 +39,7 @@ public final class Shapes {
      * Six translucent faces. Both windings are emitted per face, so the box reads the same from
      * inside and out without needing a no-cull pipeline.
      */
-    public static void fillBox(VertexConsumer vc, Matrix4f mat, Box box,
+    public static void fillBox(VertexConsumer vc, Matrix4f mat, AABB box,
                                float r, float g, float b, float a) {
         float x1 = (float) box.minX, y1 = (float) box.minY, z1 = (float) box.minZ;
         float x2 = (float) box.maxX, y2 = (float) box.maxY, z2 = (float) box.maxZ;
@@ -56,7 +56,7 @@ public final class Shapes {
     }
 
     /** The twelve edges of a box. */
-    public static void outlineBox(VertexConsumer vc, Matrix4f mat, Box box,
+    public static void outlineBox(VertexConsumer vc, Matrix4f mat, AABB box,
                                   float r, float g, float b, float a, float width) {
         float x1 = (float) box.minX, y1 = (float) box.minY, z1 = (float) box.minZ;
         float x2 = (float) box.maxX, y2 = (float) box.maxY, z2 = (float) box.maxZ;
@@ -83,21 +83,21 @@ public final class Shapes {
      * looks like a hopper and a chest has no floating gap around it. Falls back to a full cube
      * for blocks with an empty outline.
      */
-    public static Box blockBox(BlockState state, BlockView view, BlockPos pos) {
+    public static AABB blockBox(BlockState state, BlockGetter view, BlockPos pos) {
         try {
-            VoxelShape shape = state.getOutlineShape(view, pos);
+            VoxelShape shape = state.getShape(view, pos);
             if (shape != null && !shape.isEmpty()) {
-                return shape.getBoundingBox().offset(pos).expand(BLOCK_INSET);
+                return shape.bounds().move(pos.getX(), pos.getY(), pos.getZ()).inflate(BLOCK_INSET);
             }
         } catch (Exception e) {
             // A block whose shape depends on state we do not have; a full cube is a fine answer.
         }
-        return new Box(pos).expand(BLOCK_INSET);
+        return new AABB(pos).inflate(BLOCK_INSET);
     }
 
     /** Union of two boxes — for drawing a double chest, or any paired block, as one box. */
-    public static Box union(Box a, Box b) {
-        return new Box(
+    public static AABB union(AABB a, AABB b) {
+        return new AABB(
             Math.min(a.minX, b.minX), Math.min(a.minY, b.minY), Math.min(a.minZ, b.minZ),
             Math.max(a.maxX, b.maxX), Math.max(a.maxY, b.maxY), Math.max(a.maxZ, b.maxZ)
         );
@@ -153,10 +153,10 @@ public final class Shapes {
                             float ax, float ay, float az, float bx, float by, float bz,
                             float cx, float cy, float cz, float dx, float dy, float dz,
                             float r, float g, float b, float a) {
-        vc.vertex(mat, ax, ay, az).color(r, g, b, a);
-        vc.vertex(mat, bx, by, bz).color(r, g, b, a);
-        vc.vertex(mat, cx, cy, cz).color(r, g, b, a);
-        vc.vertex(mat, dx, dy, dz).color(r, g, b, a);
+        vc.addVertex(mat, ax, ay, az).setColor(r, g, b, a);
+        vc.addVertex(mat, bx, by, bz).setColor(r, g, b, a);
+        vc.addVertex(mat, cx, cy, cz).setColor(r, g, b, a);
+        vc.addVertex(mat, dx, dy, dz).setColor(r, g, b, a);
     }
 
     /**
@@ -172,8 +172,8 @@ public final class Shapes {
         float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
         float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (len > 0) { dx /= len; dy /= len; dz /= len; }
-        vc.vertex(mat, x1, y1, z1).color(r, g, b, a).normal(dx, dy, dz).lineWidth(width);
-        vc.vertex(mat, x2, y2, z2).color(r, g, b, a).normal(dx, dy, dz).lineWidth(width);
+        vc.addVertex(mat, x1, y1, z1).setColor(r, g, b, a).setNormal(dx, dy, dz).setLineWidth(width);
+        vc.addVertex(mat, x2, y2, z2).setColor(r, g, b, a).setNormal(dx, dy, dz).setLineWidth(width);
     }
 
     // ── Colour helpers ───────────────────────────────────────────────────────

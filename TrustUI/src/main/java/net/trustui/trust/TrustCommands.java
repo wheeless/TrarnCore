@@ -1,6 +1,6 @@
 package net.trustui.trust;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.trustui.TrustUI;
 import net.trustui.config.ConfigManager;
 
@@ -35,12 +35,12 @@ public final class TrustCommands {
     }
 
     private static void send(String command) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getNetworkHandler() == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null) {
             TrustUI.LOGGER.warn("[TrustUI] not connected; dropping '{}'", command);
             return;
         }
         TrustUI.LOGGER.debug("[TrustUI] sending /{}", command);
-        client.getNetworkHandler().sendChatCommand(command);
+        client.getConnection().sendCommand(command);
     }
 }

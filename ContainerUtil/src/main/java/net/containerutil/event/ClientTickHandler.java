@@ -12,8 +12,8 @@ import net.containerutil.search.SearchScreen;
 import net.trarncore.input.Keys;
 import net.trarncore.util.Guarded;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.ChatFormatting;
 
 public class ClientTickHandler {
 
@@ -42,15 +42,15 @@ public class ClientTickHandler {
         }
     }
 
-    private static void handleKeybinds(MinecraftClient client) {
-        while (ContainerUtil.TOGGLE_HIGHLIGHTS != null && ContainerUtil.TOGGLE_HIGHLIGHTS.wasPressed()) {
+    private static void handleKeybinds(Minecraft client) {
+        while (ContainerUtil.TOGGLE_HIGHLIGHTS != null && ContainerUtil.TOGGLE_HIGHLIGHTS.consumeClick()) {
             ContainerUtil.enabled = !ContainerUtil.enabled;
             ConfigManager.get().enabled = ContainerUtil.enabled;
             ConfigManager.save();
             ContainerUtil.CHAT.send("Highlights " + (ContainerUtil.enabled ? "enabled" : "disabled"));
         }
 
-        while (ContainerUtil.OPEN_SEARCH != null && ContainerUtil.OPEN_SEARCH.wasPressed()) {
+        while (ContainerUtil.OPEN_SEARCH != null && ContainerUtil.OPEN_SEARCH.consumeClick()) {
             if (!IndexManager.isActive()) {
                 ContainerUtil.CHAT.send("No index for this world yet.");
             } else {
@@ -58,7 +58,7 @@ public class ClientTickHandler {
             }
         }
 
-        while (ContainerUtil.CLEAR_TRACK != null && ContainerUtil.CLEAR_TRACK.wasPressed()) {
+        while (ContainerUtil.CLEAR_TRACK != null && ContainerUtil.CLEAR_TRACK.consumeClick()) {
             if (TrackedContainer.isTracking()) {
                 TrackedContainer.clear();
                 ContainerUtil.CHAT.send("Stopped tracking.");
@@ -71,8 +71,8 @@ public class ClientTickHandler {
      * between backend servers in place, and continuing to write into the previous world's index
      * would scatter one base's containers across two files.
      */
-    private static void checkWorldKey(MinecraftClient client) {
-        if (client.world == null) {
+    private static void checkWorldKey(Minecraft client) {
+        if (client.level == null) {
             lastWorldKey = null;
             return;
         }
@@ -91,7 +91,7 @@ public class ClientTickHandler {
      * freecam over to a chest is not arriving at it, and clearing the guidance at that moment
      * would strand you once the camera snapped back to your body.
      */
-    private static void checkTrackArrival(MinecraftClient client) {
+    private static void checkTrackArrival(Minecraft client) {
         ContainerRecord tracked = TrackedContainer.get();
         if (tracked == null || client.player == null) return;
 
@@ -106,7 +106,7 @@ public class ClientTickHandler {
         if (distanceSq <= (double) clearDistance * clearDistance) {
             TrackedContainer.clear();
             ContainerUtil.CHAT.send("Arrived at " + tracked.displayName()
-                + " (" + tracked.coordsString() + ")", Formatting.GREEN);
+                + " (" + tracked.coordsString() + ")", ChatFormatting.GREEN);
         }
     }
 }

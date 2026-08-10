@@ -1,14 +1,14 @@
 package net.simdistance;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.simdistance.config.ConfigManager;
 import net.simdistance.event.ClientTickHandler;
 import net.simdistance.render.SimDistanceRenderer;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
 import net.trarncore.chat.ChatChannel;
 import net.trarncore.update.UpdateChecker;
 import org.slf4j.Logger;
@@ -20,9 +20,9 @@ public class SimDistance implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** One colour per sibling mod so prefixes stay distinguishable in a shared chat log. */
-    public static final ChatChannel CHAT = ChatChannel.of("SimDistance", Formatting.RED);
+    public static final ChatChannel CHAT = ChatChannel.of("SimDistance", ChatFormatting.RED);
 
-    public static KeyBinding TOGGLE_BORDER;
+    public static KeyMapping TOGGLE_BORDER;
 
     /** In-memory mirror of {@code config.enabled}; the render loop reads this every frame. */
     public static volatile boolean enabled = true;
@@ -32,11 +32,11 @@ public class SimDistance implements ClientModInitializer {
         ConfigManager.load();
         enabled = ConfigManager.get().enabled;
 
-        TOGGLE_BORDER = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        TOGGLE_BORDER = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.simdistance.toggle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_G,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
 
         ClientTickHandler.register();

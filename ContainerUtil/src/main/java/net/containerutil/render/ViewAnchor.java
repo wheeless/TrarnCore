@@ -1,9 +1,9 @@
 package net.containerutil.render;
 
 import net.containerutil.config.ConfigManager;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Camera;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Where ContainerUtil measures from.
@@ -29,45 +29,57 @@ public final class ViewAnchor {
     }
 
     /** True when measurements should come from the camera rather than the player. */
-    private static boolean useCamera(MinecraftClient client) {
+    private static boolean useCamera(Minecraft client) {
         if (!ConfigManager.get().anchorToCamera) return false;
-        Camera camera = client.gameRenderer.getCamera();
+        Camera camera = client.gameRenderer.getMainCamera();
         // Before the first frame is set up the camera holds defaults, which would put the anchor
         // at the origin and cull everything. Fall back to the player until it is live.
-        return camera != null && camera.isReady();
+        return camera != null && camera.isInitialized();
     }
 
     /** The point to measure distances from. */
-    public static Vec3d origin(MinecraftClient client) {
+    public static Vec3 origin(Minecraft client) {
         if (useCamera(client)) {
-            return client.gameRenderer.getCamera().getCameraPos();
+            return client.gameRenderer.getMainCamera().position();
         }
-        if (client.player == null) return Vec3d.ZERO;
-        return new Vec3d(client.player.getX(), client.player.getY(), client.player.getZ());
+        if (client.player == null) return Vec3.ZERO;
+        return new Vec3(client.player.getX(), client.player.getY(), client.player.getZ());
     }
 
     /** Yaw to orient the HUD direction arrow against, in degrees. */
-    public static float yaw(MinecraftClient client) {
+    public static float yaw(Minecraft client) {
         if (useCamera(client)) {
-            return client.gameRenderer.getCamera().getYaw();
+            return yawFromCamera(client.gameRenderer.getMainCamera());
         }
-        return client.player != null ? client.player.getYaw() : 0f;
+        return client.player != null ? client.player.getYRot() : 0f;
+    }
+
+    /**
+     * Yaw in Minecraft's convention, derived from the camera's forward vector.
+     *
+     * <p>{@code Camera} no longer exposes yaw directly in 26.x — rotation moved into the render
+     * state extraction — so it is recovered from the forward direction. Minecraft yaw is 0 at
+     * south and increases clockwise, hence {@code atan2(-x, z)}.
+     */
+    private static float yawFromCamera(Camera camera) {
+        org.joml.Vector3fc forward = camera.forwardVector();
+        return (float) Math.toDegrees(Math.atan2(-forward.x(), forward.z()));
     }
 
     /** Eye position for the peek raycast. */
-    public static Vec3d eyePos(MinecraftClient client) {
+    public static Vec3 eyePos(Minecraft client) {
         if (useCamera(client)) {
-            return client.gameRenderer.getCamera().getCameraPos();
+            return client.gameRenderer.getMainCamera().position();
         }
-        return client.player != null ? client.player.getCameraPosVec(1f) : Vec3d.ZERO;
+        return client.player != null ? client.player.getEyePosition(1f) : Vec3.ZERO;
     }
 
     /** Unit look vector for the peek raycast. */
-    public static Vec3d lookVec(MinecraftClient client) {
+    public static Vec3 lookVec(Minecraft client) {
         if (useCamera(client)) {
-            Camera camera = client.gameRenderer.getCamera();
-            return Vec3d.fromPolar(camera.getPitch(), camera.getYaw());
+            Camera camera = client.gameRenderer.getMainCamera();
+            return new Vec3(camera.forwardVector());
         }
-        return client.player != null ? client.player.getRotationVec(1f) : new Vec3d(0, 0, 1);
+        return client.player != null ? client.player.getViewVector(1f) : new Vec3(0, 0, 1);
     }
 }

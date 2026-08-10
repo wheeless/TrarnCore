@@ -1,10 +1,10 @@
 package net.trustui.ui;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.widget.ElementListWidget;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 
 /**
- * The scrolling list, built on vanilla's {@link ElementListWidget}.
+ * The scrolling list, built on vanilla's {@link ContainerObjectSelectionList}.
  *
  * <p>Using vanilla's widget rather than drawing rows by hand is what makes this look native: the
  * panel background, borders, scrollbar, row highlighting, keyboard navigation and narration all
@@ -14,9 +14,9 @@ import net.minecraft.client.gui.widget.ElementListWidget;
  * expand behaviour is instead a second entry inserted below the player's row; see
  * {@link TrustScreen}.
  */
-public class TrustListWidget extends ElementListWidget<TrustListEntry> {
+public class TrustListWidget extends ContainerObjectSelectionList<TrustListEntry> {
 
-    public TrustListWidget(MinecraftClient client, int width, int height, int y, int itemHeight) {
+    public TrustListWidget(Minecraft client, int width, int height, int y, int itemHeight) {
         super(client, width, height, y, itemHeight);
     }
 

@@ -67,7 +67,7 @@ X/Z is what makes the link; any reasonable Y works.
 | --- | --- | --- |
 | Fabric Loader ≥ 0.15 | Yes | |
 | Fabric API | Yes | |
-| Java 21 | Yes | |
+| Java 25 | Yes | |
 | [ModMenu](https://modrinth.com/mod/modmenu) | Recommended | Needed to reach the config screen |
 | [Cloth Config](https://modrinth.com/mod/cloth-config) | Recommended | Needed for the config screen UI |
 
@@ -90,18 +90,18 @@ it is not the same thing as sending a chat message.
 ```
 
 The jar lands in `build/libs/`, and is also copied to [`../ModBuilds/`](../ModBuilds) alongside the
-other mods' output for easy installing. Requires JDK 21.
+other mods' output for easy installing. Requires JDK 25.
 
 ## Upgrading Minecraft version
 
 Version pins live in [`../versions.properties`](../versions.properties), shared with every mod in
-this directory — bump `minecraft_version`, `yarn_mappings`, `loader_version` and `fabric_version`
+this directory — bump `minecraft_version`, `loader_version` and `fabric_version`
 (and the soft-dep versions) to the builds listed at <https://fabricmc.net/develop/>, and the whole
 family follows. Each mod keeps a fallback copy in its own `gradle.properties` so a project copied
 out of this directory still builds.
 
-The source targets only stable Fabric API and Yarn names, so a normal version bump should need no
-code changes here. Where rendering does break across versions, the fix belongs in
+Minecraft 26.x ships unobfuscated, so the source targets Mojang's own names directly — there is no
+Yarn and no intermediary. See [`../plans/port-to-26.md`](../plans/port-to-26.md). Where rendering does break across versions, the fix belongs in
 [TrarnCore](../TrarnCore)'s `render` package, which this mod draws through — one fix covers every
 sibling.
 
@@ -117,5 +117,5 @@ sibling.
 ## Related mods
 
 [ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [ContainerUtil](../ContainerUtil) ·
-[RSwitch](../RSwitch) — same Minecraft/Yarn/Fabric target, shared [TrarnCore](../TrarnCore)
+[RSwitch](../RSwitch) — same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore)
 plumbing.

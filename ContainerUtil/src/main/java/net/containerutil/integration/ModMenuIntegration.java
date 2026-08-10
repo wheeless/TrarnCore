@@ -1,7 +1,7 @@
 package net.containerutil.integration;
 
 import net.containerutil.config.ContainerUtilConfigScreen;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 import net.trarncore.integration.ClothModMenuIntegration;
 
 /**

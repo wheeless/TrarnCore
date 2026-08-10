@@ -5,18 +5,17 @@ import net.claimviz.config.ConfigManager;
 import net.claimviz.data.ClaimCache;
 import net.claimviz.data.ClaimRect;
 import net.claimviz.event.ServerJoinHandler;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Vec3d;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.phys.Vec3;
 import net.trarncore.render.Shapes;
 import org.joml.Matrix4f;
 
@@ -42,10 +41,10 @@ public class ClaimRenderer {
     private static final float LABEL_HEIGHT = 2.8f;
 
     public static void register() {
-        WorldRenderEvents.END_MAIN.register(ClaimRenderer::render);
+        LevelRenderEvents.END_MAIN.register(ClaimRenderer::render);
     }
 
-    private static void render(WorldRenderContext context) {
+    private static void render(LevelRenderContext context) {
         long start = System.nanoTime();
         try {
             renderInternal(context);
@@ -62,13 +61,13 @@ public class ClaimRenderer {
         }
     }
 
-    private static void renderInternal(WorldRenderContext context) {
+    private static void renderInternal(LevelRenderContext context) {
         if (!ClaimViz.showClaims) return;
         var cfg = ServerJoinHandler.getActiveConfig();
         if (cfg == null || !cfg.showClaims) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
 
         String dim = ServerJoinHandler.getLastDimension();
         if (dim == null) return;
@@ -90,15 +89,15 @@ public class ClaimRenderer {
         }
 
         String playerName = client.player.getGameProfile().name();
-        Vec3d cam = client.gameRenderer.getCamera().getCameraPos();
-        MatrixStack matrices = context.matrices();
-        VertexConsumerProvider consumers = context.consumers();
+        Vec3 cam = client.gameRenderer.getMainCamera().position();
+        PoseStack matrices = context.poseStack();
+        MultiBufferSource consumers = context.bufferSource();
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cam.x, -cam.y, -cam.z);
-        Matrix4f mat = matrices.peek().getPositionMatrix();
+        Matrix4f mat = matrices.last().pose();
 
-        VertexConsumer vc = consumers.getBuffer(RenderLayers.LINES);
+        VertexConsumer vc = consumers.getBuffer(RenderTypes.LINES);
         float y = (float) py;
 
         for (ClaimRect claim : nearby) {
@@ -118,20 +117,20 @@ public class ClaimRenderer {
             addLine(vc, mat, x1, y, z2, x1, y, z1, r, g, b);
         }
 
-        matrices.pop();
+        matrices.popPose();
 
-        if (consumers instanceof VertexConsumerProvider.Immediate imm) {
-            imm.draw(RenderLayers.LINES);
+        if (consumers instanceof MultiBufferSource.BufferSource imm) {
+            imm.endBatch(RenderTypes.LINES);
         }
 
         // ── Owner labels ─────────────────────────────────────────────────────
         if (cfg.showClaimOwnerLabels) {
-            Camera camera = client.gameRenderer.getCamera();
+            Camera camera = client.gameRenderer.getMainCamera();
             float spacing = Math.max(1, cfg.claimLabelSpacing);
             for (ClaimRect claim : nearby) {
                 String text = labelText(claim, playerName);
                 int color   = labelColor(claim, playerName);
-                int tw = client.textRenderer.getWidth(text);
+                int tw = client.font.width(text);
                 float labelY = y + LABEL_HEIGHT;
 
                 placeLabelsOnEdge(text, color, tw, claim.minX(), claim.maxX(), claim.minZ(), true,
@@ -153,8 +152,8 @@ public class ClaimRenderer {
      */
     private static void placeLabelsOnEdge(String text, int color, int tw,
                                            float varyFrom, float varyTo, float fixed, boolean fixedIsX,
-                                           float labelY, float spacing, Vec3d cam, MatrixStack matrices,
-                                           VertexConsumerProvider consumers, MinecraftClient client,
+                                           float labelY, float spacing, Vec3 cam, PoseStack matrices,
+                                           MultiBufferSource consumers, Minecraft client,
                                            Camera camera) {
         float mid = (varyFrom + varyTo) / 2f;
         placeLabel(text, color, tw, varyToWorld(mid, fixed, fixedIsX), labelY,
@@ -187,22 +186,22 @@ public class ClaimRenderer {
     }
 
     private static void placeLabel(String text, int color, int tw,
-                                    float wx, float wy, float wz, Vec3d cam,
-                                    MatrixStack matrices, VertexConsumerProvider consumers,
-                                    MinecraftClient client, Camera camera) {
-        matrices.push();
+                                    float wx, float wy, float wz, Vec3 cam,
+                                    PoseStack matrices, MultiBufferSource consumers,
+                                    Minecraft client, Camera camera) {
+        matrices.pushPose();
         matrices.translate(wx - cam.x, wy - cam.y, wz - cam.z);
-        matrices.multiply(camera.getRotation());
+        matrices.mulPose(camera.rotation());
         matrices.scale(0.025f, -0.025f, 0.025f);
-        Matrix4f textMat = matrices.peek().getPositionMatrix();
-        client.textRenderer.draw(
+        Matrix4f textMat = matrices.last().pose();
+        client.font.drawInBatch(
             text, -tw / 2f, 0, color, false,
             textMat, consumers,
-            TextRenderer.TextLayerType.NORMAL,
+            Font.DisplayMode.NORMAL,
             0x55000000,
-            LightmapTextureManager.MAX_LIGHT_COORDINATE
+            0xF000F0
         );
-        matrices.pop();
+        matrices.popPose();
     }
 
     private static String labelText(ClaimRect claim, String playerName) {

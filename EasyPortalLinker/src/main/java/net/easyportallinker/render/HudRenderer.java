@@ -1,9 +1,10 @@
 package net.easyportallinker.render;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import net.easyportallinker.EasyPortalLinker;
 import net.easyportallinker.config.ConfigManager;
 import net.easyportallinker.config.EasyPortalLinkerConfig;
@@ -21,7 +22,8 @@ public class HudRenderer {
     private static long lastError = 0;
 
     public static void register() {
-        HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(EasyPortalLinker.MOD_ID, "overlay"),
+            (drawContext, tickCounter) -> {
             try {
                 renderHud(drawContext);
             } catch (Exception e) {
@@ -34,7 +36,7 @@ public class HudRenderer {
         });
     }
 
-    private static void renderHud(DrawContext drawContext) {
+    private static void renderHud(GuiGraphicsExtractor drawContext) {
         if (!EasyPortalLinker.enabled) return;
         PortalTarget sel = EasyPortalLinker.selection;
         if (sel == null || sel.sourceDim == null) return;
@@ -42,9 +44,9 @@ public class HudRenderer {
         EasyPortalLinkerConfig cfg = ConfigManager.get();
         if (!cfg.showHudCoords) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
-        String dim = client.world.getRegistryKey().getValue().toString();
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
+        String dim = client.level.dimension().identifier().toString();
 
         int height = Math.max(3, sel.height);
         int idealY = LinkMath.recommendedY(sel.destDim, sel.sourceY, height);
@@ -52,8 +54,8 @@ public class HudRenderer {
         if (sel.isDestDim(dim)) {
             String yPart;
             if (cfg.lockTargetY) {
-                int lo = client.world.getBottomY() + 2;
-                int hi = client.world.getTopYInclusive() - height;
+                int lo = client.level.getMinY() + 2;
+                int hi = client.level.getMaxY() - height;
                 if (hi < lo) hi = lo;
                 int ry = Math.max(lo, Math.min(hi, cfg.lockedTargetY));
                 yPart = "  Y " + ry + " (locked)";
@@ -73,9 +75,9 @@ public class HudRenderer {
             return; // selection belongs to some other dimension pair
         }
 
-        int w = client.getWindow().getScaledWidth();
-        int tw = client.textRenderer.getWidth(text);
+        int w = client.getWindow().getGuiScaledWidth();
+        int tw = client.font.width(text);
         int x = (w - tw) / 2;
-        drawContext.drawTextWithShadow(client.textRenderer, Text.literal(text), x, 4, COLOR);
+        drawContext.text(client.font, Component.literal(text), x, 4, COLOR);
     }
 }

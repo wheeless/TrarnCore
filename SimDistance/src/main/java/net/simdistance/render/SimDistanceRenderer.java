@@ -1,15 +1,15 @@
 package net.simdistance.render;
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.Vec3d;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.phys.Vec3;
 import net.simdistance.SimDistance;
 import net.simdistance.config.ConfigManager;
 import net.simdistance.config.SimDistanceConfig;
@@ -29,10 +29,10 @@ public class SimDistanceRenderer {
     private static long lastRenderError = 0;
 
     public static void register() {
-        WorldRenderEvents.END_MAIN.register(SimDistanceRenderer::render);
+        LevelRenderEvents.END_MAIN.register(SimDistanceRenderer::render);
     }
 
-    private static void render(WorldRenderContext context) {
+    private static void render(LevelRenderContext context) {
         try {
             renderInternal(context);
         } catch (Exception e) {
@@ -44,19 +44,19 @@ public class SimDistanceRenderer {
         }
     }
 
-    private static void renderInternal(WorldRenderContext context) {
+    private static void renderInternal(LevelRenderContext context) {
         if (!SimDistance.enabled) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
 
         SimDistanceConfig cfg = ConfigManager.get();
-        ClientWorld world = client.world;
+        ClientLevel world = client.level;
 
         // ── Chunk radius: live simulation distance (falls back to the manual value) ──
         int radius;
         if (cfg.useServerSimulationDistance) {
-            int sd = world.getSimulationDistance();
+            int sd = world.getServerSimulationDistance();
             radius = sd > 0 ? sd : cfg.manualChunkRadius;
         } else {
             radius = cfg.manualChunkRadius;
@@ -77,8 +77,8 @@ public class SimDistanceRenderer {
 
         float y0, y1;
         if (cfg.fullWorldHeight) {
-            y0 = world.getBottomY();
-            y1 = world.getTopYInclusive() + 1;
+            y0 = world.getMinY();
+            y1 = world.getMaxY() + 1;
         } else {
             int vr = Math.max(1, cfg.verticalRadius);
             y0 = (float) (py - vr);
@@ -91,17 +91,17 @@ public class SimDistanceRenderer {
         float b = (c & 0xFF) / 255f;
         float a = Math.max(0, Math.min(100, cfg.wallOpacity)) / 100f;
 
-        Vec3d cam = client.gameRenderer.getCamera().getCameraPos();
-        MatrixStack matrices = context.matrices();
-        VertexConsumerProvider consumers = context.consumers();
+        Vec3 cam = client.gameRenderer.getMainCamera().position();
+        PoseStack matrices = context.poseStack();
+        MultiBufferSource consumers = context.bufferSource();
         if (consumers == null) return;
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cam.x, -cam.y, -cam.z);
-        Matrix4f mat = matrices.peek().getPositionMatrix();
+        Matrix4f mat = matrices.last().pose();
 
         // ── Translucent red walls ───────────────────────────────────────────────
-        RenderLayer quadLayer = RenderLayers.debugQuads();
+        RenderType quadLayer = RenderTypes.debugQuads();
         VertexConsumer q = consumers.getBuffer(quadLayer);
         addWallAlongX(q, mat, minX, maxX, minZ, y0, y1, r, g, b, a); // north
         addWallAlongX(q, mat, minX, maxX, maxZ, y0, y1, r, g, b, a); // south
@@ -111,7 +111,7 @@ public class SimDistanceRenderer {
         // ── Crisp outline along the top/bottom edges and vertical corners ─────────
         boolean lines = cfg.drawEdgeLines || cfg.showChunkGrid;
         if (lines) {
-            VertexConsumer l = consumers.getBuffer(RenderLayers.LINES);
+            VertexConsumer l = consumers.getBuffer(RenderTypes.LINES);
             if (cfg.drawEdgeLines) {
                 addRect(l, mat, minX, maxX, minZ, maxZ, y0, r, g, b); // bottom
                 addRect(l, mat, minX, maxX, minZ, maxZ, y1, r, g, b); // top
@@ -131,11 +131,11 @@ public class SimDistanceRenderer {
             }
         }
 
-        matrices.pop();
+        matrices.popPose();
 
-        if (consumers instanceof VertexConsumerProvider.Immediate imm) {
-            imm.draw(quadLayer);
-            if (lines) imm.draw(RenderLayers.LINES);
+        if (consumers instanceof MultiBufferSource.BufferSource imm) {
+            imm.endBatch(quadLayer);
+            if (lines) imm.endBatch(RenderTypes.LINES);
         }
     }
 

@@ -10,17 +10,17 @@ import net.containerutil.data.WorldIdentity;
 import net.containerutil.render.ContainerEspRenderer;
 import net.containerutil.render.TrackedContainer;
 import net.containerutil.render.ViewAnchor;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class SearchScreen extends Screen {
     /** Remembered across openings so re-opening the screen resumes where you left off. */
     private static String lastQuery = "";
 
-    private TextFieldWidget queryField;
+    private EditBox queryField;
     private List<SearchResult> results = new ArrayList<>();
     private int scroll = 0;
     private List<String> warnings = new ArrayList<>();
@@ -69,30 +69,30 @@ public class SearchScreen extends Screen {
     private double playerZ;
 
     public SearchScreen() {
-        super(Text.literal("ContainerUtil Search"));
+        super(Component.literal("ContainerUtil Search"));
     }
 
     @Override
     protected void init() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            net.minecraft.util.math.Vec3d anchor = ViewAnchor.origin(client);
+            net.minecraft.world.phys.Vec3 anchor = ViewAnchor.origin(client);
             playerX = anchor.x;
             playerY = anchor.y;
             playerZ = anchor.z;
         }
 
         int fieldWidth = Math.min(420, width - 40);
-        queryField = new TextFieldWidget(textRenderer, (width - fieldWidth) / 2, 22, fieldWidth, 18,
-            Text.literal("Search"));
+        queryField = new EditBox(font, (width - fieldWidth) / 2, 22, fieldWidth, 18,
+            Component.literal("Search"));
         queryField.setMaxLength(256);
-        queryField.setPlaceholder(Text.literal("item name, #tag, dim:nether, in:barrel, count>64, -exclude"));
-        queryField.setText(lastQuery);
-        queryField.setChangedListener(text -> {
+        queryField.setHint(Component.literal("item name, #tag, dim:nether, in:barrel, count>64, -exclude"));
+        queryField.setValue(lastQuery);
+        queryField.setResponder(text -> {
             lastQuery = text;
             runSearch();
         });
-        addDrawableChild(queryField);
+        addRenderableWidget(queryField);
         setInitialFocus(queryField);
 
         runSearch();
@@ -131,13 +131,13 @@ public class SearchScreen extends Screen {
     // ── Rendering ────────────────────────────────────────────────────────────
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Keep distances honest if the world moves you while the screen is open (a boat, a
         // minecart, a piston). The result *order* stays as it was when the search ran, so rows
         // do not shuffle under the cursor mid-click.
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            net.minecraft.util.math.Vec3d anchor = ViewAnchor.origin(client);
+            net.minecraft.world.phys.Vec3 anchor = ViewAnchor.origin(client);
             playerX = anchor.x;
             playerY = anchor.y;
             playerZ = anchor.z;
@@ -145,7 +145,7 @@ public class SearchScreen extends Screen {
 
         context.fill(0, 0, width, height, COLOR_BG);
 
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         drawHeader(context);
 
@@ -161,15 +161,15 @@ public class SearchScreen extends Screen {
         }
     }
 
-    private void drawHeader(DrawContext context) {
+    private void drawHeader(GuiGraphicsExtractor context) {
         String title = "ContainerUtil";
-        context.drawText(textRenderer, title, 10, 8, COLOR_TEXT, false);
+        context.text(font, title, 10, 8, COLOR_TEXT, false);
 
         String indexInfo = IndexManager.isActive()
             ? IndexManager.index().size() + " containers indexed  ·  " + IndexManager.activeWorldKey()
             : "no world";
-        int infoWidth = textRenderer.getWidth(indexInfo);
-        context.drawText(textRenderer, indexInfo, width - infoWidth - 10, 8, COLOR_DIM, false);
+        int infoWidth = font.width(indexInfo);
+        context.text(font, indexInfo, width - infoWidth - 10, 8, COLOR_DIM, false);
 
         // Summary line under the field: how many containers, and the grand total of the
         // dominant matched item across all of them.
@@ -191,18 +191,18 @@ public class SearchScreen extends Screen {
                 }
             }
         }
-        context.drawText(textRenderer, summary, 10, 46, COLOR_DIM, false);
+        context.text(font, summary, 10, 46, COLOR_DIM, false);
 
         if (!warnings.isEmpty()) {
             String warning = String.join("  ", warnings);
-            int warnWidth = textRenderer.getWidth(warning);
-            context.drawText(textRenderer, warning, width - warnWidth - 10, 46, COLOR_WARN, false);
+            int warnWidth = font.width(warning);
+            context.text(font, warning, width - warnWidth - 10, 46, COLOR_WARN, false);
         }
 
         context.fill(0, HEADER_HEIGHT - 2, width, HEADER_HEIGHT - 1, COLOR_BORDER);
     }
 
-    private void drawRows(DrawContext context, int listTop, int listBottom, int hovered, int mouseX, int mouseY) {
+    private void drawRows(GuiGraphicsExtractor context, int listTop, int listBottom, int hovered, int mouseX, int mouseY) {
         if (results.isEmpty()) return;
 
         ContainerUtilConfig config = ConfigManager.get();
@@ -231,7 +231,7 @@ public class SearchScreen extends Screen {
             if (primary != null && primary.id != null) {
                 ItemStack stack = stackFor(primary.id);
                 if (stack != null) {
-                    context.drawItem(stack, textX, y + 3);
+                    context.item(stack, textX, y + 3);
                 }
                 textX += 22;
             }
@@ -243,7 +243,7 @@ public class SearchScreen extends Screen {
             if (primary != null && primary.nestedIn != null) {
                 left += "  (in " + primary.nestedIn + ")";
             }
-            context.drawText(textRenderer, left, textX, y + 3, COLOR_TEXT, false);
+            context.text(font, left, textX, y + 3, COLOR_TEXT, false);
 
             StringBuilder sub = new StringBuilder(record.displayName());
             if (record.slotCount > 0) {
@@ -253,7 +253,7 @@ public class SearchScreen extends Screen {
                 sub.append("  · ").append(ContainerEspRenderer.formatAge(
                     System.currentTimeMillis() - record.lastScanned)).append(" old");
             }
-            context.drawText(textRenderer, sub.toString(), textX, y + 12,
+            context.text(font, sub.toString(), textX, y + 12,
                 record.isStale(config.staleAfterDays) ? COLOR_STALE : COLOR_DIM, false);
 
             String where = record.coordsString();
@@ -263,8 +263,8 @@ public class SearchScreen extends Screen {
                 double live = Math.sqrt(record.distanceSqTo(playerX, playerY, playerZ));
                 where = (int) Math.round(live) + "m   " + where;
             }
-            int whereWidth = textRenderer.getWidth(where);
-            context.drawText(textRenderer, where, width - whereWidth - 10, y + 7,
+            int whereWidth = font.width(where);
+            context.text(font, where, width - whereWidth - 10, y + 7,
                 i == hovered ? COLOR_ACCENT : COLOR_DIM, false);
         }
 
@@ -273,7 +273,7 @@ public class SearchScreen extends Screen {
         drawScrollbar(context, listTop, listBottom, visibleRows);
     }
 
-    private void drawScrollbar(DrawContext context, int listTop, int listBottom, int visibleRows) {
+    private void drawScrollbar(GuiGraphicsExtractor context, int listTop, int listBottom, int visibleRows) {
         if (results.size() <= visibleRows) return;
 
         int trackHeight = listBottom - listTop;
@@ -285,18 +285,18 @@ public class SearchScreen extends Screen {
         context.fill(width - 4, thumbY, width - 2, thumbY + thumbHeight, 0x90FFFFFF);
     }
 
-    private void drawFooter(DrawContext context) {
+    private void drawFooter(GuiGraphicsExtractor context) {
         int y = height - FOOTER_HEIGHT + 3;
         context.fill(0, height - FOOTER_HEIGHT, width, height - FOOTER_HEIGHT + 1, COLOR_BORDER);
 
         String left = "[Click] track   [Shift+Click] track & stay   [Enter] track first   [Esc] close";
-        context.drawText(textRenderer, left, 10, y, COLOR_DIM, false);
+        context.text(font, left, 10, y, COLOR_DIM, false);
 
         if (TrackedContainer.isTracking()) {
             String right = "tracking: " + TrackedContainer.get().displayName()
                 + " (" + TrackedContainer.get().coordsString() + ")   [Del] clear";
-            int rightWidth = textRenderer.getWidth(right);
-            context.drawText(textRenderer, right, width - rightWidth - 10, y, COLOR_ACCENT, false);
+            int rightWidth = font.width(right);
+            context.text(font, right, width - rightWidth - 10, y, COLOR_ACCENT, false);
         }
     }
 
@@ -307,7 +307,7 @@ public class SearchScreen extends Screen {
      * answers "where else is this" across the whole world even when the active query narrowed
      * things down to one dimension or container kind.
      */
-    private void drawNearestPanel(DrawContext context, SearchResult result, int mouseX, int mouseY) {
+    private void drawNearestPanel(GuiGraphicsExtractor context, SearchResult result, int mouseX, int mouseY) {
         ItemEntry primary = result.primary();
         if (primary == null || primary.id == null) return;
 
@@ -330,11 +330,11 @@ public class SearchScreen extends Screen {
                 + "   " + record.totalOf(primary.id) + "×   " + record.displayName());
         }
 
-        int panelWidth = Math.max(textRenderer.getWidth(header), textRenderer.getWidth(totalLine));
-        for (String line : lines) panelWidth = Math.max(panelWidth, textRenderer.getWidth(line));
+        int panelWidth = Math.max(font.width(header), font.width(totalLine));
+        for (String line : lines) panelWidth = Math.max(panelWidth, font.width(line));
         panelWidth += 14;
 
-        int lineHeight = textRenderer.fontHeight + 2;
+        int lineHeight = font.lineHeight + 2;
         int panelHeight = 12 + lineHeight * (lines.size() + 2);
 
         // Flip to the other side of the cursor rather than running off the edge.
@@ -349,12 +349,12 @@ public class SearchScreen extends Screen {
         context.fill(x + panelWidth - 1, y, x + panelWidth, y + panelHeight, COLOR_BORDER);
 
         int textY = y + 6;
-        context.drawText(textRenderer, header, x + 7, textY, COLOR_TEXT, false);
+        context.text(font, header, x + 7, textY, COLOR_TEXT, false);
         textY += lineHeight;
-        context.drawText(textRenderer, totalLine, x + 7, textY, COLOR_ACCENT, false);
+        context.text(font, totalLine, x + 7, textY, COLOR_ACCENT, false);
         textY += lineHeight;
         for (String line : lines) {
-            context.drawText(textRenderer, line, x + 7, textY, COLOR_DIM, false);
+            context.text(font, line, x + 7, textY, COLOR_DIM, false);
             textY += lineHeight;
         }
     }
@@ -362,7 +362,7 @@ public class SearchScreen extends Screen {
     // ── Input ────────────────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         int listTop = HEADER_HEIGHT;
         int listBottom = height - FOOTER_HEIGHT;
         int row = rowAt((int) click.x(), (int) click.y(), listTop, listBottom);
@@ -384,7 +384,7 @@ public class SearchScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
+    public boolean keyPressed(KeyEvent input) {
         int key = input.key();
 
         if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
@@ -398,8 +398,8 @@ public class SearchScreen extends Screen {
             return true;
         }
         // Let the search key close the screen too, so the same key toggles it.
-        if (ContainerUtil.OPEN_SEARCH != null && ContainerUtil.OPEN_SEARCH.matchesKey(input)) {
-            close();
+        if (ContainerUtil.OPEN_SEARCH != null && ContainerUtil.OPEN_SEARCH.matches(input)) {
+            onClose();
             return true;
         }
         return super.keyPressed(input);
@@ -408,7 +408,7 @@ public class SearchScreen extends Screen {
     private void track(SearchResult result, boolean closeScreen) {
         ItemEntry primary = result.primary();
         TrackedContainer.set(result.container(), primary != null ? primary.name : null);
-        if (closeScreen) close();
+        if (closeScreen) onClose();
     }
 
     private int rowAt(int mouseX, int mouseY, int listTop, int listBottom) {
@@ -419,7 +419,7 @@ public class SearchScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
@@ -457,7 +457,7 @@ public class SearchScreen extends Screen {
         return stackCache.computeIfAbsent(itemId, id -> {
             Identifier identifier = Identifier.tryParse(id);
             if (identifier == null) return ItemStack.EMPTY;
-            Item item = Registries.ITEM.get(identifier);
+            Item item = BuiltInRegistries.ITEM.getValue(identifier);
             return item == null ? ItemStack.EMPTY : new ItemStack(item);
         });
     }
