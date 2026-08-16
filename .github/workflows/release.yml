@@ -37,7 +37,7 @@ jobs:
           if [ "$TARGET" = "all" ]; then
             # Every mod, each at its own version. TrarnCore is excluded: it is bundled inside
             # each mod and is never installed on its own, so it has no artifact worth releasing.
-            echo "dirs=ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI" >> "$GITHUB_OUTPUT"
+            echo "dirs=ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI AutoRelog" >> "$GITHUB_OUTPUT"
             echo "prop="                                                            >> "$GITHUB_OUTPUT"
             echo "title=Mod bundle $VERSION"                                        >> "$GITHUB_OUTPUT"
           else
@@ -48,6 +48,7 @@ jobs:
               containerutil)    DIR=ContainerUtil    ; PROP=mod_version ;;
               rswitch)          DIR=RSwitch          ; PROP=mod_version ;;
               trustui)          DIR=TrustUI          ; PROP=mod_version ;;
+              autorelog)        DIR=AutoRelog        ; PROP=mod_version ;;
               # The library deliberately uses its own property name, so that a mod release
               # passing -Pmod_version cannot re-version the library through the composite build.
               trarncore)        DIR=TrarnCore        ; PROP=lib_version ;;

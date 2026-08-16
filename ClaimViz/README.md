@@ -137,10 +137,5 @@ Minecraft/Loader/Fabric versions come from [`../versions.properties`](../version
 
 ## Related mods
 
-[SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) - same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore) plumbing.
-
----
-
-## License
-
-MIT - see [LICENSE](LICENSE).
+[SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) · [TrustUI](../TrustUI) · [AutoRelog](../AutoRelog) — same Minecraft/Fabric target,
+shared [TrarnCore](../TrarnCore) plumbing.

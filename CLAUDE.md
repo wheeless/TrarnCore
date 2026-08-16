@@ -16,6 +16,7 @@ library they all bundle. Published under **Trarn** at `github.com/wheeless/Trarn
 | `SimDistance/` | Simulation-distance border walls |
 | `RSwitch/` | Swap held item with the inventory slot above |
 | `TrustUI/` | Social-menu-style GriefPrevention trust management |
+| `AutoRelog/` | Rule-driven auto-reconnect, classified by why the session ended |
 
 Everything is **client-side only**. No mod requires a server-side component.
 
@@ -37,7 +38,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 cd ContainerUtil && ./gradlew build
 
 # everything
-for m in TrarnCore ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI; do
+for m in TrarnCore ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI AutoRelog; do
   (cd "$m" && ./gradlew build)
 done
 ```
@@ -87,6 +88,10 @@ indefinitely, so library edits are silently ignored. The composite build exists 
 
 **Domain logic stays out of TrarnCore.** Claim fetching, portal maths, container indexing,
 inventory swapping and trust parsing belong to the mod that owns them. The library is plumbing.
+
+**Access wideners, never mixins.** TrarnCore opens `RenderType.create`; AutoRelog opens
+`DisconnectedScreen.details`. Both are one line and fail loudly at load if the target is renamed.
+A widener belongs to whichever project needs it — only genuinely shared plumbing goes in TrarnCore.
 
 **No mixins anywhere.** Version-volatile rendering lives in `TrarnCore/render/`; content capture
 uses Fabric callbacks plus a `currentScreen` poll rather than mixing into `HandledScreen`. Keep it
@@ -154,7 +159,7 @@ workflows silently never run. Push them individually, or use `all-v*`.
 
 - Java packages are `net.<modid>`; mod ids are lowercase, display names and repo paths PascalCase.
 - Each mod has one `ChatChannel` with its own prefix colour: ContainerUtil dark aqua, RSwitch green,
-  SimDistance red, EasyPortalLinker gold, ClaimViz light purple, TrustUI blue.
+  SimDistance red, EasyPortalLinker gold, ClaimViz light purple, TrustUI blue, AutoRelog aqua.
 - Config classes implement `ValidatedConfig`; `validate()` runs after every load and before every
   save, and must clamp ranges and fill defaults.
 - ModMenu integrations extend `ClothModMenuIntegration` so the Cloth screen class is never loaded

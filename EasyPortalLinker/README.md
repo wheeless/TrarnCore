@@ -116,6 +116,5 @@ sibling.
 
 ## Related mods
 
-[ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [ContainerUtil](../ContainerUtil) ·
-[RSwitch](../RSwitch) — same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore)
-plumbing.
+[ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) · [TrustUI](../TrustUI) · [AutoRelog](../AutoRelog) — same Minecraft/Fabric target,
+shared [TrarnCore](../TrarnCore) plumbing.

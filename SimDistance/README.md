@@ -90,11 +90,5 @@ no publish step.
 
 ## Related mods
 
-[ClaimViz](../ClaimViz) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil)
-· [RSwitch](../RSwitch) — same Minecraft/Fabric target, shared [TrarnCore](../TrarnCore)
-plumbing.
-
-## Roadmap
-
-- Optional red boxes around blocks/entities that fall outside the active simulation region — the
-  things that behave oddly once you are far enough away.
+[ClaimViz](../ClaimViz) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) · [TrustUI](../TrustUI) · [AutoRelog](../AutoRelog) — same Minecraft/Fabric target,
+shared [TrarnCore](../TrarnCore) plumbing.

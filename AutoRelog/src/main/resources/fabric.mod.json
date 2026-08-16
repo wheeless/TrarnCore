@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "autorelog",
+  "version": "${version}",
+  "name": "AutoRelog",
+  "description": "Reconnects to a server after a drop, on your terms. Classifies why the session ended — network failure, restart, ban, operator kick — and never walks back in after a kick unless you say so. Rules match the disconnect message to decide whether to retry and how long to wait. Client-side only.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/AutoRelog",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.autorelog.AutoRelog"
+    ],
+    "modmenu": [
+      "net.autorelog.integration.ModMenuIntegration"
+    ]
+  },
+  "accessWidener": "autorelog.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=26.1 <26.2",
+    "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}

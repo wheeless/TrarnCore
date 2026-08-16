@@ -98,6 +98,5 @@ instead of silently swapping with the wrong row.
 
 ## Related mods
 
-[ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) ·
-[ContainerUtil](../ContainerUtil) — same Minecraft/Fabric target, shared
-[TrarnCore](../TrarnCore) plumbing.
+[ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [TrustUI](../TrustUI) · [AutoRelog](../AutoRelog) — same Minecraft/Fabric target,
+shared [TrarnCore](../TrarnCore) plumbing.

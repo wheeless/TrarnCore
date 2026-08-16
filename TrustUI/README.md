@@ -123,6 +123,5 @@ other mods' output. Requires JDK 25.
 
 ## Related mods
 
-[ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) ·
-[ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) — same Minecraft/Fabric target,
+[ClaimViz](../ClaimViz) · [SimDistance](../SimDistance) · [EasyPortalLinker](../EasyPortalLinker) · [ContainerUtil](../ContainerUtil) · [RSwitch](../RSwitch) · [AutoRelog](../AutoRelog) — same Minecraft/Fabric target,
 shared [TrarnCore](../TrarnCore) plumbing.

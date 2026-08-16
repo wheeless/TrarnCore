@@ -1,0 +1,11 @@
+accessWidener	v2	official
+
+# DisconnectedScreen keeps the disconnect reason in a private field with no getter, and the
+# reason is the entire input to this mod's decision: whether a drop was a transport failure, a
+# server restart or a moderator kick is only knowable from that Component.
+#
+# The alternative is a mixin, which this repo does not use anywhere (see ../CLAUDE.md). Opening
+# one field to read is a far smaller commitment to Minecraft's internals than injecting into
+# them, and it fails loudly at load time rather than silently at runtime if the field is ever
+# renamed.
+accessible	field	net/minecraft/client/gui/screens/DisconnectedScreen	details	Lnet/minecraft/network/DisconnectionDetails;
