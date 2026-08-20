@@ -4,6 +4,7 @@ import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.easyportallinker.EasyPortalLinker;
 
@@ -230,6 +231,128 @@ public class EasyPortalLinkerConfigScreen {
             .build()
         );
 
+        portalHighlights(builder, entry, config);
+
         return builder.build();
+    }
+
+    // ── Portal highlights ─────────────────────────────────────────────────────
+
+    private static void portalHighlights(ConfigBuilder builder, ConfigEntryBuilder entry,
+                                         EasyPortalLinkerConfig config) {
+        ConfigCategory esp = builder.getOrCreateCategory(Component.literal("Highlights"));
+
+        esp.addEntry(entry
+            .startTextDescription(Component.literal(
+                "Highlights every nether portal around you, the way ContainerUtil highlights "
+                + "containers. Toggled in-game with the Portal Highlights key (O by default).")
+                .withStyle(ChatFormatting.GRAY))
+            .build());
+
+        esp.addEntry(entry
+            .startBooleanToggle(Component.literal("Enabled"), config.portalEsp)
+            .setDefaultValue(false)
+            .setTooltip(Component.literal("Also bound to a hotkey — this and the key are the same switch."))
+            .setSaveConsumer(value -> {
+                config.portalEsp = value;
+                EasyPortalLinker.portalEsp = value;
+            })
+            .build());
+
+        esp.addEntry(entry
+            .startColorField(Component.literal("Portal Colour"), config.portalEspColor)
+            .setDefaultValue(0xA24BF0)
+            .setTooltip(Component.literal("Colour for lit, working portals."))
+            .setSaveConsumer(value -> config.portalEspColor = value)
+            .build());
+
+        esp.addEntry(entry
+            .startIntSlider(Component.literal("Portal Opacity"), config.portalEspOpacity, 0, 100)
+            .setDefaultValue(30)
+            .setTextGetter(value -> Component.literal(value == 0 ? "outline only" : value + "%"))
+            .setSaveConsumer(value -> config.portalEspOpacity = value)
+            .build());
+
+        esp.addEntry(entry
+            .startBooleanToggle(Component.literal("Detect Unlit Frames"), config.detectUnlitFrames)
+            .setDefaultValue(false)
+            .setTooltip(
+                Component.literal("Also highlight complete frames nobody has lit."),
+                Component.literal("Detection is exact — it asks Minecraft the same question flint"),
+                Component.literal("and steel does, so what lights up is what would light."),
+                Component.literal("Costs more than finding lit portals: obsidian is common enough")
+                    .withStyle(ChatFormatting.YELLOW),
+                Component.literal("that the chunk-palette shortcut skips far fewer sections.")
+                    .withStyle(ChatFormatting.YELLOW))
+            .setSaveConsumer(value -> config.detectUnlitFrames = value)
+            .build());
+
+        esp.addEntry(entry
+            .startColorField(Component.literal("Unlit Frame Colour"), config.unlitFrameColor)
+            .setDefaultValue(0x6A3FA0)
+            .setTooltip(Component.literal("Duller purple by default, so lit and unlit read as the "
+                + "same family while still being told apart."))
+            .setSaveConsumer(value -> config.unlitFrameColor = value)
+            .build());
+
+        esp.addEntry(entry
+            .startIntSlider(Component.literal("Unlit Frame Opacity"), config.unlitFrameOpacity, 0, 100)
+            .setDefaultValue(18)
+            .setTextGetter(value -> Component.literal(value == 0 ? "outline only" : value + "%"))
+            .setSaveConsumer(value -> config.unlitFrameOpacity = value)
+            .build());
+
+        esp.addEntry(entry
+            .startIntSlider(Component.literal("Unlit Frame Radius"), config.unlitFrameChunkRadius, 1, 16)
+            .setDefaultValue(4)
+            .setTextGetter(value -> Component.literal(value + " chunks"))
+            .setTooltip(Component.literal("Kept smaller than the main radius, since unlit frames are "
+                + "the expensive half of the sweep."))
+            .setSaveConsumer(value -> config.unlitFrameChunkRadius = value)
+            .build());
+
+        esp.addEntry(entry
+            .startIntSlider(Component.literal("Radius"), config.portalEspChunkRadius, 1, 32)
+            .setDefaultValue(8)
+            .setTextGetter(value -> Component.literal(value + " chunks"))
+            .setTooltip(Component.literal("Horizontal only. Chunks load as full columns, so a portal "
+                + "at bedrock two chunks away is as loaded as one at your feet."))
+            .setSaveConsumer(value -> config.portalEspChunkRadius = value)
+            .build());
+
+        esp.addEntry(entry
+            .startIntSlider(Component.literal("Vertical Limit"), config.portalEspVerticalLimit, 0, 320)
+            .setDefaultValue(0)
+            .setTextGetter(value -> Component.literal(value == 0 ? "whole column" : "±" + value + " blocks"))
+            .setTooltip(Component.literal("Hide portals further than this above or below you. "
+                + "0 shows the whole column."))
+            .setSaveConsumer(value -> config.portalEspVerticalLimit = value)
+            .build());
+
+        esp.addEntry(entry
+            .startIntField(Component.literal("Max Highlights"), config.maxRenderedPortals)
+            .setDefaultValue(64)
+            .setMin(1).setMax(512)
+            .setTooltip(Component.literal("Hard cap on boxes drawn at once. The nearest survive."))
+            .setSaveConsumer(value -> config.maxRenderedPortals = value)
+            .build());
+
+        esp.addEntry(entry
+            .startBooleanToggle(Component.literal("See Through Walls"), config.portalEspSeeThrough)
+            .setDefaultValue(true)
+            .setSaveConsumer(value -> config.portalEspSeeThrough = value)
+            .build());
+
+        esp.addEntry(entry
+            .startBooleanToggle(Component.literal("Draw Fill"), config.portalEspFill)
+            .setDefaultValue(true)
+            .setSaveConsumer(value -> config.portalEspFill = value)
+            .build());
+
+        esp.addEntry(entry
+            .startBooleanToggle(Component.literal("Draw Outline"), config.portalEspOutline)
+            .setDefaultValue(true)
+            .setSaveConsumer(value -> config.portalEspOutline = value)
+            .build());
     }
 }

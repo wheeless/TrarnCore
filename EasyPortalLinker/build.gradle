@@ -34,6 +34,11 @@ repositories {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
     }
+    maven {
+        // Only for cloth's basic-math (see the compileOnly note below).
+        name = "shedaniel"
+        url = "https://maven.shedaniel.me/"
+    }
 }
 
 dependencies {
@@ -48,6 +53,9 @@ dependencies {
     // Soft dependencies — compile against but do not bundle or require at runtime
     compileOnly "maven.modrinth:modmenu:${pin('modmenu_version')}"
     compileOnly "maven.modrinth:cloth-config:${pin('cloth_config_version')}"
+    // Cloth's colour picker exposes me.shedaniel.math.Color in its builder signatures, which
+    // lives in a separate artifact. Without it startColorField will not even compile.
+    compileOnly "me.shedaniel.cloth:basic-math:${pin('basic_math_version')}"
 }
 
 processResources {

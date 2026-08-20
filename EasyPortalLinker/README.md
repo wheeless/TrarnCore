@@ -42,16 +42,49 @@ EasyPortalLinker just does that math for you and paints the answer in the world.
 
 The selection is remembered across dimension changes **and** restarts.
 
+## Portal highlights
+
+Press **O** to highlight every nether portal around you in purple — the same idea as
+ContainerUtil's container highlights, pointed at portals. Useful for finding the portal you built
+six months ago, spotting a ruined portal's frame from across a ravine, or auditing which of your
+Nether hub's portals are actually lit.
+
+**Complete-but-unlit frames** get their own duller purple, off by default. Detection is not a
+guess: it asks Minecraft `PortalShape.findEmptyPortalShape`, the same check flint and steel runs,
+so what lights up is exactly what would light. Nothing decorative made of obsidian is a false
+positive.
+
+It is off by default because it costs more, not because it is unreliable. Finding lit portals is
+nearly free — portal blocks are rare enough that a chunk section's block palette answers "nothing
+here" for almost every section without reading a single position. Obsidian is common, so far fewer
+sections can be skipped and each candidate needs validating. Unlit frames therefore get their own,
+smaller radius.
+
+The currently selected portal keeps its teal selection highlight instead of the purple one, so the
+two never fight over the same box.
+
+| Setting | Default |
+| --- | --- |
+| Portal colour / opacity | `#A24BF0`, 30% |
+| Unlit frame colour / opacity | `#6A3FA0`, 18% |
+| Radius | 8 chunks (horizontal) |
+| Unlit frame radius | 4 chunks |
+| Max highlights | 64, nearest first |
+| See through walls | on |
+
 ## Controls
 
 - **P** — toggle the guide on/off (rebindable in Options → Controls → *EasyPortalLinker*).
+- **O** — toggle the portal highlights. Sits next to P so the mod's two toggles are neighbours,
+  and is unbound in vanilla.
 - **K** — lock the target Y to your current level; **sneak + K** to unlock (back to following your
   feet). Rebindable.
 - **Clear Portal Selection** — unbound by default; bind it if you like. You can also
   **sneak + right-click** with the selection item to clear.
 - **ModMenu → EasyPortalLinker → Settings** — selection item, reach, colours, opacity, the
   target-Y lock (below), and which overlays to draw (column / ghost frame / floating coords / HUD /
-  source highlight). Requires Cloth Config, like the sibling mods.
+  source highlight). The **Highlights** tab holds everything above. Requires Cloth Config, like the
+  sibling mods.
 
 ### Target Y
 
@@ -113,6 +146,10 @@ sibling.
   dimension reports that it has no counterpart.
 - The recommended Y is the source portal's Y clamped clear of the Nether's bedrock floor and
   roof; the full-height column is there precisely so you can choose a different Y if you prefer.
+- Highlights only cover chunks the client has loaded. A portal beyond render distance is not
+  hidden by a setting — the client genuinely does not know it is there.
+- The sweep is spread across ticks and republished as a whole snapshot, so a portal you just built
+  appears within a second or two rather than instantly.
 
 ## Related mods
 
