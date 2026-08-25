@@ -152,6 +152,37 @@ public class ClaimVizConfigScreen {
             .build()
         );
         sub.add(entry
+            .startIntSlider(Component.literal("Hide Heads Within (blocks)"), slot.playerHeadHideWithin, 0, 512)
+            .setDefaultValue(64)
+            .setTextGetter(val -> Component.literal(val == 0 ? "never hide" : val + " blocks"))
+            .setTooltip(
+                Component.literal("Hide the head icon for players closer than this."),
+                Component.literal("Inside this range you can see the player themselves, so the"),
+                Component.literal("icon is covering them up rather than helping."),
+                Component.literal("Measured in 3D, so somebody below you in a ravine keeps theirs."))
+            .setSaveConsumer(val -> slot.playerHeadHideWithin = val)
+            .build()
+        );
+        sub.add(entry
+            .startIntSlider(Component.literal("Head Size — Nearest"), slot.playerHeadMaxSize, 4, 48)
+            .setDefaultValue(16)
+            .setTextGetter(val -> Component.literal(val + "px"))
+            .setTooltip(Component.literal("Icon size at the hide threshold — the largest it ever gets."))
+            .setSaveConsumer(val -> slot.playerHeadMaxSize = val)
+            .build()
+        );
+        sub.add(entry
+            .startIntSlider(Component.literal("Head Size — Farthest"), slot.playerHeadMinSize, 4, 32)
+            .setDefaultValue(6)
+            .setTextGetter(val -> Component.literal(val + "px"))
+            .setTooltip(
+                Component.literal("Icon size once distance has shrunk it as far as it goes."),
+                Component.literal("Icons scale by inverse distance like real perspective, clamped"),
+                Component.literal("here so a distant player is not a two-pixel smudge."))
+            .setSaveConsumer(val -> slot.playerHeadMinSize = val)
+            .build()
+        );
+        sub.add(entry
             .startIntSlider(Component.literal("Player Render Distance (blocks)"), slot.playerRenderDistance, 50, 25000)
             .setDefaultValue(500)
             .setTooltip(Component.literal("Maximum distance at which other players' heads and markers are rendered."))

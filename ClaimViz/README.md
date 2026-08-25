@@ -96,6 +96,9 @@ Most settings are per-server and configured through the in-game ModMenu screen.
 | Claim Owner Labels | `true` | Show floating owner name labels on claim borders |
 | Label Spacing | `12 blocks` | Distance between repeated owner labels along an edge |
 | Show Player Heads | on | Skin face icon above each player's marker. Off leaves just the health cross and name tag. |
+| Hide Heads Within | `64` blocks | Closer than this and you can see the player themselves, so the icon only covers them up. Measured in 3D, so someone below you in a ravine keeps theirs. |
+| Head Size — Nearest | `16px` | Size at the hide threshold, the largest it ever gets. |
+| Head Size — Farthest | `6px` | Icons scale by inverse distance like real perspective, floored here so a distant player is not an unrecognisable smudge. |
 | Show Players | `false` | Render live player overlays |
 | Player Render Distance | `500 blocks` | Max distance at which player overlays are rendered (50–25,000) |
 | Claim Enter/Leave Messages | `true` | Local chat message on claim boundary crossing |

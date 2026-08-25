@@ -227,12 +227,29 @@ public class PlayerRenderer {
         int h = client.getWindow().getGuiScaledHeight();
         double renderDistSq = (double) cfg.playerRenderDistance * cfg.playerRenderDistance;
         double selfX = client.player.getX();
+        double selfY = client.player.getY();
         double selfZ = client.player.getZ();
+
+        // Sizes are clamped here rather than in the config class, which has no validation hook.
+        int maxSize = Math.clamp(cfg.playerHeadMaxSize, 4, 64);
+        // Floored at 4px: below that a face is a coloured smudge, and an icon you
+        // cannot identify is worse than no icon at all.
+        int minSize = Math.clamp(cfg.playerHeadMinSize, 4, maxSize);
+        double hideWithin = Math.max(0, cfg.playerHeadHideWithin);
 
         for (PlayerData pd : PlayerFetcher.getCached()) {
             if (!localDim.equals(pd.world())) continue;
             if (selfUuid.equals(pd.uuid())) continue;
             if (distSq(pd.x(), pd.z(), selfX, selfZ) > renderDistSq) continue;
+
+            // Full 3D distance for the icon, deliberately different from the horizontal cull
+            // above: the cull answers "is this player in range at all", which chunks make a
+            // column question, while this answers "can I already see them", which height very
+            // much affects.
+            double distance = Math.sqrt(dist3Sq(pd.x(), pd.y(), pd.z(), selfX, selfY, selfZ));
+            if (distance < hideWithin) continue;
+
+            int size = headSize(distance, hideWithin, minSize, maxSize);
 
             // Project ~2.3 blocks above feet
             float[] screen = project(pd.x(), pd.y() + 2.3, pd.z(), storedCamPos, storedMVP, w, h);
@@ -244,13 +261,19 @@ public class PlayerRenderer {
             Identifier skin = getSkin(pd, client);
             if (skin == null) continue;
 
+            // Centred horizontally, with the BOTTOM edge pinned to a fixed offset above the
+            // projected point. Anchoring the top instead would make the icon bob up and down as
+            // its size changed with distance.
+            int x = sx - size / 2;
+            int y = sy - 8 - size;
+
             // Signature: blit(pipeline, id, x, y, u, v, destW, destH, srcW, srcH, texW, texH)
             // Face region: pixels (8,8)-(16,16) on a 64x64 skin
             drawContext.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, skin,
-                sx - 8, sy - 24, 8f, 8f, 16, 16, 8, 8, 64, 64);
+                x, y, 8f, 8f, size, size, 8, 8, 64, 64);
             // Hat overlay: pixels (40,8)-(48,16) on a 64x64 skin
             drawContext.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, skin,
-                sx - 8, sy - 24, 40f, 8f, 16, 16, 8, 8, 64, 64);
+                x, y, 40f, 8f, size, size, 8, 8, 64, 64);
         }
     }
 
@@ -296,6 +319,29 @@ public class PlayerRenderer {
                                 float r, float g, float b) {
         Shapes.line(vc, mat, x1, y1, z1, x2, y2, z2, r, g, b, 1f, LINE_WIDTH);
     }
+    /**
+     * Icon size for a distance, falling off as real perspective does.
+     *
+     * <p>Inverse-distance rather than a linear ramp, so the icon shrinks the way the player
+     * themselves appears to — a locator that lied about relative distance would be worse than one
+     * of fixed size. Clamped at both ends: unbounded {@code 1/d} would make a player at 500 blocks
+     * a two-pixel smudge, and one just past the hide threshold enormous.
+     */
+    private static int headSize(double distance, double hideWithin, int minSize, int maxSize) {
+        if (distance <= 0) return maxSize;
+
+        // Reference distance is where the icon is at full size — the hide threshold, or the
+        // nearest sensible stand-in when hiding is switched off entirely.
+        double reference = hideWithin > 0 ? hideWithin : 16.0;
+        double scaled = maxSize * (reference / distance);
+        return Math.clamp((int) Math.round(scaled), minSize, maxSize);
+    }
+
+    private static double dist3Sq(double x1, double y1, double z1, double x2, double y2, double z2) {
+        double dx = x1 - x2, dy = y1 - y2, dz = z1 - z2;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
     private static double distSq(double x1, double z1, double x2, double z2) {
         double dx = x1 - x2, dz = z1 - z2;
         return dx * dx + dz * dz;

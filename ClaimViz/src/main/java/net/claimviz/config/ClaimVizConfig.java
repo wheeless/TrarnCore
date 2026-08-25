@@ -34,6 +34,19 @@ public class ClaimVizConfig {
          * decoration that adds a screen-space icon per player.
          */
         public boolean showPlayerHeads = true;
+        /**
+         * Hide the head icon for players closer than this, in blocks.
+         *
+         * <p>Inside this range you can see the actual player, so the icon is covering them up
+         * rather than helping. Measured in three dimensions, unlike the render-distance cull
+         * below — somebody ten blocks away but two hundred down a ravine is not "probably
+         * visible", and should keep their icon.
+         */
+        public int playerHeadHideWithin = 64;
+        /** Icon size in pixels at {@link #playerHeadHideWithin} — the closest one ever drawn. */
+        public int playerHeadMaxSize = 16;
+        /** Icon size in pixels once distance has shrunk it as far as it goes. */
+        public int playerHeadMinSize = 6;
         /** Max distance in blocks at which other players are rendered. */
         public int playerRenderDistance = 500;
         /** Show action bar messages when entering/leaving a claim. */
