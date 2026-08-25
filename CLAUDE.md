@@ -9,7 +9,7 @@ library they all bundle. Published under **Trarn** at `github.com/wheeless/Trarn
 
 | Project | Purpose |
 | --- | --- |
-| `TrarnCore/` | Shared library: render layers/primitives, chat, JSON config, keybinds, ModMenu glue, update checker |
+| `TrarnCore/` | Shared library: render layers/primitives, chat, JSON config, keybinds, HUD panels + drag-to-place, ModMenu glue, update checker |
 | `ClaimViz/` | GriefPrevention claims + live players from a SquareMap web map; full-screen map |
 | `ContainerUtil/` | Container ESP, searchable content index, track-and-navigate |
 | `EasyPortalLinker/` | Nether portal counterpart placement |
@@ -17,6 +17,7 @@ library they all bundle. Published under **Trarn** at `github.com/wheeless/Trarn
 | `RSwitch/` | Swap held item with the inventory slot above |
 | `TrustUI/` | Social-menu-style GriefPrevention trust management |
 | `AutoRelog/` | Rule-driven auto-reconnect, classified by why the session ended |
+| `BlowByBlow/` | Scrolling combat log, HUD panel and/or chat, floating damage numbers |
 
 Everything is **client-side only**. No mod requires a server-side component.
 
@@ -38,7 +39,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 cd ContainerUtil && ./gradlew build
 
 # everything
-for m in TrarnCore ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI AutoRelog; do
+for m in TrarnCore ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI AutoRelog BlowByBlow; do
   (cd "$m" && ./gradlew build)
 done
 ```
@@ -116,6 +117,11 @@ a different transform, and the labels swing around their anchor as the camera tu
 flush on having actually drawn something, so it does not drain layers the world renderer means to
 draw itself.
 
+**HUD positions are an anchor plus an offset, never raw coordinates.** Use `TrarnCore/hud`'s
+`HudPosition`, and let players place panels with `HudPlacementScreen` rather than typing numbers.
+A position stored as raw pixels is off-screen the first time someone changes resolution or GUI
+scale; re-pinning to the nearest anchor on drop is what makes a placement survive.
+
 **Player-facing messages go to local chat, never the action bar.** Use each mod's `ChatChannel`
 (`TrarnCore/chat`). One exception, deliberate: ClaimViz's persistent claim bar, which refreshes
 every tick and so must overwrite itself.
@@ -159,7 +165,7 @@ workflows silently never run. Push them individually, or use `all-v*`.
 
 - Java packages are `net.<modid>`; mod ids are lowercase, display names and repo paths PascalCase.
 - Each mod has one `ChatChannel` with its own prefix colour: ContainerUtil dark aqua, RSwitch green,
-  SimDistance red, EasyPortalLinker gold, ClaimViz light purple, TrustUI blue, AutoRelog aqua.
+  SimDistance red, EasyPortalLinker gold, ClaimViz light purple, TrustUI blue, AutoRelog aqua, BlowByBlow yellow.
 - Config classes implement `ValidatedConfig`; `validate()` runs after every load and before every
   save, and must clamp ranges and fill defaults.
 - ModMenu integrations extend `ClothModMenuIntegration` so the Cloth screen class is never loaded

@@ -22,13 +22,14 @@ none of them changes anything on a server you connect to.
 | **[SimDistance](SimDistance)** | Draws a translucent wall at the edge of your simulation-distance region, so you can see which chunks are actually being ticked — the thing that decides whether your farms run. | [README](SimDistance/README.md) |
 | **[TrustUI](TrustUI)** | A social-menu-style screen for managing GriefPrevention claim trust. Shows online players with their heads, marks who already has permissions in the claim you are standing in, and grants or revokes access with a click. | [README](TrustUI/README.md) |
 | **[RSwitch](RSwitch)** | One key swaps the item in your hand with the inventory slot directly above it. Works with an empty slot too, so it doubles as an instant way to clear your hand. | [README](RSwitch/README.md) |
+| **[BlowByBlow](BlowByBlow)** | A scrolling combat log — what hit you, for how much, with what, and the same in reverse for everything you hit. Draggable HUD panel, chat, or both, with optional floating damage numbers. | [README](BlowByBlow/README.md) |
 | **[AutoRelog](AutoRelog)** | Reconnects after a drop, on your terms. Reads *why* the session ended — network failure, restart, ban, operator kick — and never walks back in after a kick unless you say so. Rules match the disconnect message to decide whether to retry and how long to wait. | [README](AutoRelog/README.md) |
 
 ### The library
 
 | | | |
 | --- | --- | --- |
-| **[TrarnCore](TrarnCore)** | Shared plumbing: render layers and primitives, local chat feedback, JSON config, keybind helpers, ModMenu/Cloth glue, error throttling. Bundled into every mod via jar-in-jar. | [README](TrarnCore/README.md) |
+| **[TrarnCore](TrarnCore)** | Shared plumbing: render layers and primitives, local chat feedback, JSON config, keybind helpers, HUD panels with drag-to-place positioning, ModMenu/Cloth glue, error throttling. Bundled into every mod via jar-in-jar. | [README](TrarnCore/README.md) |
 
 It exists because the mods had accumulated a copy each of the same `ConfigManager`, `Chat` and
 `ModMenuIntegration`, and had reimplemented the same vertex-emitting code four times. More
@@ -58,7 +59,7 @@ Or build everything:
 
 ```bash
 (cd TrarnCore && ./gradlew build)
-for m in ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI AutoRelog; do
+for m in ClaimViz SimDistance EasyPortalLinker ContainerUtil RSwitch TrustUI AutoRelog BlowByBlow; do
   (cd "$m" && ./gradlew build)
 done
 ```
@@ -69,11 +70,11 @@ library and rebuilding any mod picks the change up immediately. There is no publ
 
 ### Where the jars go
 
-Every mod build also copies its finished jar into **[`ModBuilds/`](ModBuilds)**, so all seven sit in
+Every mod build also copies its finished jar into **[`ModBuilds/`](ModBuilds)**, so all eight sit in
 one folder ready to drop into a Minecraft instance. Sources jars and the library are deliberately
 excluded — see [that folder's README](ModBuilds/README.md).
 
-Install all seven together. They share the bundled library, and mixing a jar built before a library
+Install all eight together. They share the bundled library, and mixing a jar built before a library
 change with jars built after it is the one combination that produces a `NoClassDefFoundError` at
 startup.
 
@@ -104,7 +105,7 @@ git tag all-v0.3.0
 git push origin all-v0.3.0
 ```
 
-Builds all seven mods and publishes **one** GitHub Release with all seven jars attached. Each mod is
+Builds all eight mods and publishes **one** GitHub Release with all eight jars attached. Each mod is
 built at its own configured version — the version in the tag is only the release label. That is
 deliberate: forcing every mod to the tag's number would claim a change in mods that did not
 change. The original six were levelled to `0.2.0` at the 26.1.2 port as a common baseline and are
@@ -124,7 +125,7 @@ Builds just that project, **at the version in the tag** — overriding `gradle.p
 tag is the single action that cuts the release, with nothing to remember to commit first.
 
 Valid ids: `claimviz`, `containerutil`, `easyportallinker`, `simdistance`, `rswitch`,
-`trustui`, `autorelog`, `trarncore`, or `all`. Anything else fails the workflow with a clear message rather than silently building
+`trustui`, `autorelog`, `blowbyblow`, `trarncore`, or `all`. Anything else fails the workflow with a clear message rather than silently building
 nothing.
 
 TrarnCore is excluded from `all-v*` on purpose — it is bundled inside every mod jar and is never
@@ -133,7 +134,7 @@ a tagged reference point for the library.
 
 ## CI
 
-[`ci.yml`](.github/workflows/ci.yml) builds all eight projects as a matrix on every push and PR to
+[`ci.yml`](.github/workflows/ci.yml) builds all nine projects as a matrix on every push and PR to
 `main`, so each gets its own pass/fail in the checks list. Mod jars are uploaded as build
 artifacts with 90-day retention.
 
@@ -168,7 +169,8 @@ instance. See each mod's README.
 ├─ SimDistance/
 ├─ RSwitch/
 ├─ TrustUI/
-└─ AutoRelog/
+├─ AutoRelog/
+└─ BlowByBlow/
 ```
 
 ## License

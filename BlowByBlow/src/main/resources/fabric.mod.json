@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "blowbyblow",
+  "version": "${version}",
+  "name": "BlowByBlow",
+  "description": "A scrolling combat log: what hit you, for how much, with what — and the same in reverse for everything you hit. Draws as a draggable HUD panel, in chat, or both, with optional floating damage numbers. Client-side only.",
+  "authors": [
+    "Trarn"
+  ],
+  "contact": {
+    "sources": "https://github.com/wheeless/TrarnCore/tree/main/BlowByBlow",
+    "issues": "https://github.com/wheeless/TrarnCore/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.blowbyblow.BlowByBlow"
+    ],
+    "modmenu": [
+      "net.blowbyblow.integration.ModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=26.1 <26.2",
+    "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}
