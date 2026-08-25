@@ -143,6 +143,15 @@ public class ClaimVizConfigScreen {
             .build()
         );
         sub.add(entry
+            .startBooleanToggle(Component.literal("Show Player Heads"), slot.showPlayerHeads)
+            .setDefaultValue(true)
+            .setTooltip(
+                Component.literal("Draw each player's skin face as an icon above their marker."),
+                Component.literal("Turn off to keep just the health cross and name tag."))
+            .setSaveConsumer(val -> slot.showPlayerHeads = val)
+            .build()
+        );
+        sub.add(entry
             .startIntSlider(Component.literal("Player Render Distance (blocks)"), slot.playerRenderDistance, 50, 25000)
             .setDefaultValue(500)
             .setTooltip(Component.literal("Maximum distance at which other players' heads and markers are rendered."))

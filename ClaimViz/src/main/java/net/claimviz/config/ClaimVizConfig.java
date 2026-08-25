@@ -26,6 +26,14 @@ public class ClaimVizConfig {
         /** Distance in blocks between repeated owner labels along a claim edge. */
         public int claimLabelSpacing = 12;
         public boolean showPlayers = false;
+        /**
+         * Draw each player's skin face as a HUD icon above their marker.
+         *
+         * <p>Separate from {@link #showPlayers} because the two are independently useful: the
+         * health cross and name tag are the parts that tell you something, and the face is
+         * decoration that adds a screen-space icon per player.
+         */
+        public boolean showPlayerHeads = true;
         /** Max distance in blocks at which other players are rendered. */
         public int playerRenderDistance = 500;
         /** Show action bar messages when entering/leaving a claim. */

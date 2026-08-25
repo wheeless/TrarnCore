@@ -80,11 +80,22 @@ public class PlayerRenderer {
         Camera camera = client.gameRenderer.getMainCamera();
         Vec3 cam = camera.position();
 
-        // Build CPU-side MVP for HUD skin-icon projection this frame
+        // Build CPU-side MVP for HUD skin-icon projection this frame.
+        //
+        // Rotation only, deliberately. project() hands in camera-relative coordinates, so a view
+        // matrix that also translated by -camera would subtract the camera position twice and
+        // project heads from (target - 2 x camera) — an arbitrary direction that swings as you
+        // move, which is exactly what this used to do.
+        //
+        // Keeping the subtraction on the caller's side rather than in the matrix is also the more
+        // accurate half: these are floats, and world coordinates in the thousands lose meaningful
+        // precision before the rotation is even applied.
         Quaternionf invRot = camera.rotation().conjugate(new Quaternionf());
-        Matrix4f view = new Matrix4f()
-            .rotate(invRot)
-            .translate(-(float) cam.x, -(float) cam.y, -(float) cam.z);
+        Matrix4f view = new Matrix4f().rotate(invRot);
+
+        // The FOV setting rather than the effective FOV: Minecraft's real projection is a GPU
+        // buffer in 26.x and cannot be read back. Icons therefore drift slightly while sprinting
+        // or using a spyglass, both of which bend the actual FOV away from this number.
         int fovDeg = client.options.fov().get();
         float fovRad = (float) Math.toRadians(fovDeg);
         float aspect = (float) client.getWindow().getGuiScaledWidth()
@@ -202,7 +213,7 @@ public class PlayerRenderer {
     private static void renderHudInternal(GuiGraphicsExtractor drawContext) {
         if (!ClaimViz.showPlayers) return;
         var cfg = ServerJoinHandler.getActiveConfig();
-        if (cfg == null || !cfg.showPlayers) return;
+        if (cfg == null || !cfg.showPlayers || !cfg.showPlayerHeads) return;
         if (storedMVP == null || storedCamPos == null) return;
 
         Minecraft client = Minecraft.getInstance();

@@ -95,6 +95,7 @@ Most settings are per-server and configured through the in-game ModMenu screen.
 | Show Claims | `true` | Render claim border lines |
 | Claim Owner Labels | `true` | Show floating owner name labels on claim borders |
 | Label Spacing | `12 blocks` | Distance between repeated owner labels along an edge |
+| Show Player Heads | on | Skin face icon above each player's marker. Off leaves just the health cross and name tag. |
 | Show Players | `false` | Render live player overlays |
 | Player Render Distance | `500 blocks` | Max distance at which player overlays are rendered (50–25,000) |
 | Claim Enter/Leave Messages | `true` | Local chat message on claim boundary crossing |
